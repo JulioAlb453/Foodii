@@ -13,7 +13,7 @@ class MealCategoryViewModelFactory(
              @Suppress("UNCHECKED_CAST")
              return MealCategoryViewModel(getMelCategoryUseCase) as T
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
 
     }
 }
