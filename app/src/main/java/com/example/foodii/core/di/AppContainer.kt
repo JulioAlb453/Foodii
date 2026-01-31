@@ -16,7 +16,6 @@ class AppContainer (context: Context){
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    // Usamos el singleton definido en FoodiiDatabase para asegurar que la versión y el nombre sean correctos
     private val database: FoodiiDatabase by lazy {
         FoodiiDatabase.getDatabase(context)
     }

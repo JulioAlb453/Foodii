@@ -12,10 +12,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.compose.backgroundLight
+import com.example.compose.onPrimaryLight
+import com.example.compose.onSurfaceLight
+import com.example.compose.outlineLight
+import com.example.compose.primaryLight
+import com.example.compose.secondaryLight
+import com.example.compose.surfaceLight
 import com.example.foodii.feature.planner.data.local.entity.PlannedMealEntity
 import com.example.foodii.feature.planner.presentation.viewmodel.PlannerViewModel
+import com.example.ui.theme.TypographyFoodii
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -28,12 +35,22 @@ fun PlannerScreen(
     val meals by viewModel.plannedMeals.collectAsState()
 
     Scaffold(
+        containerColor = backgroundLight,
         topBar = {
             CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = primaryLight,
+                    titleContentColor = onPrimaryLight,
+                    navigationIconContentColor = onPrimaryLight
+                ),
                 title = { Text("Mi Agenda de Comidas", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack, 
+                            contentDescription = "Volver",
+                            tint = onPrimaryLight
+                        )
                     }
                 }
             )
@@ -69,35 +86,33 @@ fun PlannedMealItem(planned: PlannedMealEntity) {
         Card(
             onClick = { expanded = !expanded },
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+            shape = MaterialTheme.shapes.small,
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = surfaceLight
             ),
             elevation = CardDefaults.cardElevation(2.dp)
         ) {
             Column {
-                // Cabecera compacta (Usa el diseño de MealCard internamente)
                 MealCard(
                     name = planned.name,
                     imageUrl = planned.imageUrl,
                     onClick = { expanded = !expanded }
                 )
 
-                // Sección expandible con la descripción
                 AnimatedVisibility(visible = expanded) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         HorizontalDivider(modifier = Modifier.padding(bottom = 12.dp))
                         Text(
                             text = "Instrucciones:",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            style = TypographyFoodii.bodySmall,
+                            color = primaryLight,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = planned.instructions,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = TypographyFoodii.bodyMedium,
+                            color = onSurfaceLight
                         )
                     }
                 }
@@ -110,16 +125,18 @@ fun PlannedMealItem(planned: PlannedMealEntity) {
 fun DateHeader(millis: Long) {
     val dateStr = formatMillisToDate(millis)
     Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+        color = secondaryLight,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier
+            .padding(start = 160.dp, bottom = 20.dp)
+            .wrapContentSize()
     ) {
         Text(
             text = dateStr,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+            style = TypographyFoodii.bodyLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
+            color = onPrimaryLight,
         )
     }
 }
@@ -135,13 +152,13 @@ fun EmptyPlannerView(modifier: Modifier = Modifier) {
             imageVector = Icons.Default.RestaurantMenu,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.outline
+            tint = outlineLight
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Tu agenda está vacía",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.outline
+            style = TypographyFoodii.headlineMedium,
+            color = outlineLight
         )
     }
 }

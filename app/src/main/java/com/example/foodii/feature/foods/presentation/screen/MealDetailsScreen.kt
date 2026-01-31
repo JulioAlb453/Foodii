@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialogDefaults.containerColor
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,6 +16,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.compose.backgroundLight
+import com.example.compose.onPrimaryLight
+import com.example.compose.onSecondaryLight
+import com.example.compose.primaryLight
+import com.example.compose.secondaryLight
+import com.example.compose.tertiaryLight
 import com.example.foodii.feature.planner.domain.entity.MealDetail
 import com.example.foodii.feature.planner.presentation.screen.components.MealCard
 import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModel
@@ -26,27 +33,32 @@ fun MealDetailsScreen(
     factory: MealDetailsViewModelFactory,
     onBackPressed: () -> Unit,
     onMealClick: (MealDetail) -> Unit,
-    onViewPlannerClick: () -> Unit // Nueva acción para ir a la agenda
+    onViewPlannerClick: () -> Unit
 ) {
     val viewModel: MealDetailsViewModel = viewModel(factory = factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = backgroundLight,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Seleccionar Comida", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = primaryLight
+                ),
+                title = { Text("Seleccionar Comida", fontWeight = FontWeight.Bold, color = onPrimaryLight) },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = onPrimaryLight)
                     }
                 },
                 actions = {
-                    // Botón para ir a ver las comidas agendadas
-                    IconButton(onClick = onViewPlannerClick) {
+                    IconButton(onClick = onViewPlannerClick, colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = onPrimaryLight
+                    )   ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
                             contentDescription = "Ver Agenda",
-                            tint = MaterialTheme.colorScheme.primary
+
                         )
                     }
                 }
@@ -65,7 +77,8 @@ fun MealDetailsScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+
                     ) {
                         items(uiState.meals) { meal ->
                             MealCard(

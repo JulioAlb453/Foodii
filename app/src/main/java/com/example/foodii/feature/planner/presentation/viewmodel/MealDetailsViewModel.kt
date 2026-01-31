@@ -2,7 +2,7 @@ package com.example.foodii.feature.planner.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.foodii.feature.foods.presentation.screen.MealDetailsUIState
+import com.example.foodii.feature.planner.presentation.screen.components.MealDetailsUIState
 import com.example.foodii.feature.planner.domain.usecase.GetMealInstructionsUseCase
 import com.example.foodii.feature.planner.domain.entity.MealDetail
 import com.example.foodii.feature.planner.domain.usecase.PlanMealUseCase

@@ -16,6 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.compose.surfaceContainerDark
+import com.example.compose.surfaceContainerLight
+import com.example.ui.theme.TypographyFoodii
+
 
 @Composable
 fun MealCard(
@@ -26,6 +30,9 @@ fun MealCard(
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = surfaceContainerLight
+        ),
         modifier = modifier
             .fillMaxWidth()
             .padding(8.dp)
@@ -42,7 +49,7 @@ fun MealCard(
             Text(
                 text = name,
                 modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.titleMedium
+                style = TypographyFoodii.bodyLarge,
             )
         }
     }

@@ -12,7 +12,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.compose.onSurfaceLight
+import com.example.compose.onSurfaceLightMediumContrast
+import com.example.compose.outlineLight
+import com.example.compose.primaryLight
+import com.example.compose.surfaceContainerLight
 import com.example.foodii.feature.planner.domain.entity.MealDetail
+import com.example.ui.theme.TypographyFoodii
 
 @Composable
 fun MealInfoCard(
@@ -25,7 +31,7 @@ fun MealInfoCard(
             .padding(16.dp),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = surfaceContainerLight
         )
     ) {
         Column(
@@ -47,31 +53,31 @@ fun MealInfoCard(
 
             Text(
                 text = meal.name,
-                style = MaterialTheme.typography.headlineMedium,
+                style = TypographyFoodii.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = onSurfaceLight
             )
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),
                 thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = outlineLight
             )
 
             Text(
                 text = "Instrucciones",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
+                color = primaryLight
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = meal.instructions,
-                style = MaterialTheme.typography.bodyLarge,
-                lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.2,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = TypographyFoodii.bodyLarge,
+                lineHeight = TypographyFoodii.bodyLarge.lineHeight *1.2,
+                color = onSurfaceLightMediumContrast
             )
         }
     }

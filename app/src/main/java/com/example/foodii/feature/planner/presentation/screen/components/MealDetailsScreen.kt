@@ -1,5 +1,6 @@
 package com.example.foodii.feature.planner.presentation.screen.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.compose.primaryLight
 import com.example.foodii.feature.planner.domain.entity.MealDetail
 import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModel
 import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModelFactory
@@ -28,6 +30,7 @@ fun MealDetailsScreen(
     var showDatePicker by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = primaryLight,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Seleccionar Comida") },
@@ -49,7 +52,6 @@ fun MealDetailsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.meals) { meal ->
-                        // Utilizamos MealCard para mostrar la lista de comidas disponibles
                         MealCard(
                             name = meal.name,
                             imageUrl = meal.imageUrl,
