@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.foodii.feature.foods.presentation.viewmodel.MealDetailsViewModel
-import com.example.foodii.feature.foods.presentation.viewmodel.MealDetailsViewModelFactory
+import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModel
+import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

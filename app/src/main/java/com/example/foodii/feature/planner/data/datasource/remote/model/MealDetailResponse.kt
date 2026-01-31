@@ -1,4 +1,4 @@
-package com.example.foodii.feature.foods.data.datasource.remote.model
+package com.example.foodii.feature.planner.data.datasource.remote.model
 
 data class MealDetailResponse(
     val meals: List<MealDTO>

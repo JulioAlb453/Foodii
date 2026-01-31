@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.foodii.feature.foods.domain.entity.MealDetail
+import com.example.foodii.feature.planner.domain.entity.MealDetail
 
 @Composable
 fun MealInstructionsScreen(

@@ -1,6 +1,6 @@
 package com.example.foodii.feature.foods.presentation.screen
 
-import com.example.foodii.feature.foods.domain.entity.MealDetail
+import com.example.foodii.feature.planner.domain.entity.MealDetail
 
 data class MealDetailsUIState(
     val isLoading: Boolean = false,

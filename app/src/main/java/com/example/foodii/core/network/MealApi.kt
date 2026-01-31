@@ -1,7 +1,7 @@
 package com.example.foodii.core.network
 
 import com.example.foodii.feature.foods.data.datasource.remote.model.CategoryResponse
-import com.example.foodii.feature.foods.data.datasource.remote.model.MealDetailResponse
+import com.example.foodii.feature.planner.data.datasource.remote.model.MealDetailResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 

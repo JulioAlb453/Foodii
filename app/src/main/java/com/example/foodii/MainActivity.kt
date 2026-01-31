@@ -19,7 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import com.example.foodii.feature.foods.di.FoodDetailsModule
+import com.example.foodii.feature.planner.di.FoodDetailsModule
 import com.example.foodii.feature.foods.presentation.screen.MealDetailsScreen
 
 class MainActivity : ComponentActivity() {

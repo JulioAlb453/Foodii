@@ -1,8 +1,11 @@
-package com.example.foodii.feature.foods.presentation.viewmodel
+package com.example.foodii.feature.planner.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodii.feature.foods.presentation.screen.MealDetailsUIState
+import com.example.foodii.feature.planner.domain.entity.MealDetail
+import com.example.foodii.feature.planner.domain.usecase.GetMealInstructionsUseCase
+import com.example.foodii.feature.planner.domain.usecase.PlanMealUseCase // <--- Importa el nuevo UseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -10,8 +13,10 @@ import kotlinx.coroutines.launch
 
 class MealDetailsViewModel(
     private val getMealInstructionsUseCase: GetMealInstructionsUseCase,
+    private val planMealUseCase: PlanMealUseCase,
     private val letter: String
-) : ViewModel(){
+) : ViewModel() {
+
     private val _uiState = MutableStateFlow(MealDetailsUIState())
     val uiState = _uiState.asStateFlow()
 
@@ -33,6 +38,12 @@ class MealDetailsViewModel(
                     }
                 )
             }
+        }
+    }
+
+    fun onPlanMealSelected(meal: MealDetail, dateMillis: Long) {
+        viewModelScope.launch {
+            planMealUseCase(meal, dateMillis)
         }
     }
 }

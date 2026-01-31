@@ -1,4 +1,4 @@
-package com.example.foodii.feature.foods.domain.entity
+package com.example.foodii.feature.planner.domain.entity
 
 data class  MealDetail (
     val id: String,

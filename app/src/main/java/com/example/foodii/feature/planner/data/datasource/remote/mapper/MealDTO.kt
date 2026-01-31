@@ -1,7 +1,7 @@
-package com.example.foodii.feature.foods.data.datasource.remote.mapper
+package com.example.foodii.feature.planner.data.datasource.remote.mapper
 
-import com.example.foodii.feature.foods.data.datasource.remote.model.MealDTO
-import com.example.foodii.feature.foods.domain.entity.MealDetail
+import com.example.foodii.feature.planner.data.datasource.remote.model.MealDTO
+import com.example.foodii.feature.planner.domain.entity.MealDetail
 
 fun MealDTO.toMealDetail(): MealDetail{
     return MealDetail(
