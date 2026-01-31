@@ -1,5 +1,6 @@
 package com.example.foodii.feature.foods.presentation.screen
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,7 +20,8 @@ import com.example.foodii.feature.foods.presentation.viewmodel.MealCategoryViewM
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MelCategoryScreen(
-    factory: MealCategoryViewModelFactory
+    factory: MealCategoryViewModelFactory,
+    onCategoryClick: (String) -> Unit
 ) {
     val viewModel: MealCategoryViewModel = viewModel(factory = factory)
 
@@ -60,6 +62,7 @@ fun MelCategoryScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clickable{onCategoryClick(category.name)}
                                     .padding(vertical = 4.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
