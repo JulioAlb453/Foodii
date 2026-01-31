@@ -17,6 +17,7 @@ class PlannerRepositoryImpl(
                 mealId = meal.id,
                 name = meal.name,
                 imageUrl = meal.imageUrl,
+                instructions = meal.instructions, // Guardamos las instrucciones
                 date = date
             )
             plannedMealDao.insertPlannedMeal(entity)

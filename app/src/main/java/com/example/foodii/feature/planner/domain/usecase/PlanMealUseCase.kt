@@ -5,9 +5,9 @@ import com.example.foodii.feature.planner.domain.entity.MealDetail
 import com.example.foodii.feature.planner.domain.repository.PlannerRepository
 
 class PlanMealUseCase(
-    private val repository: PlannerRepository
+    private val plannerRepository: PlannerRepository
 ) {
     suspend operator fun invoke(meal: MealDetail, date: Long) {
-        repository.planMeal(meal, date)
+        plannerRepository.planMeal(meal, date)
     }
 }

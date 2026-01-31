@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.foodii.feature.planner.data.local.dao.PlannedMealDao
 import com.example.foodii.feature.planner.data.local.entity.PlannedMealEntity
 
-@Database(entities = [PlannedMealEntity::class], version = 1, exportSchema = false)
+@Database(entities = [PlannedMealEntity::class], version = 2, exportSchema = false) // Incrementado a versión 2
 abstract class FoodiiDatabase : RoomDatabase() {
 
     abstract fun plannedMealDao(): PlannedMealDao
@@ -23,7 +23,7 @@ abstract class FoodiiDatabase : RoomDatabase() {
                     FoodiiDatabase::class.java,
                     "foodii_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration() // Esto borrará los datos antiguos y creará la nueva tabla
                     .build()
                     .also { Instance = it }
             }

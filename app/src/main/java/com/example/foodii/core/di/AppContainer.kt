@@ -1,7 +1,6 @@
 package com.example.foodii.core.di
 
 import android.content.Context
-import androidx.room.Room
 import com.example.foodii.core.network.MealApi
 import com.example.foodii.feature.foods.data.datasource.repositories.CategoryRepositoryImpl
 import com.example.foodii.feature.foods.domain.repositories.MelCategoryRepository
@@ -17,13 +16,11 @@ class AppContainer (context: Context){
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
+    // Usamos el singleton definido en FoodiiDatabase para asegurar que la versión y el nombre sean correctos
     private val database: FoodiiDatabase by lazy {
-        Room.databaseBuilder(
-            context,
-            FoodiiDatabase::class.java,
-            "foodii_db"
-        ).build()
+        FoodiiDatabase.getDatabase(context)
     }
+    
     private val plannedMealDao by lazy { database.plannedMealDao() }
 
     val categoryMelApi: MealApi by lazy{
@@ -35,7 +32,7 @@ class AppContainer (context: Context){
     }
 
     val plannerRepository: PlannerRepository by lazy {
-        PlannerRepositoryImpl(database.plannedMealDao())
+        PlannerRepositoryImpl(plannedMealDao)
     }
 
 }

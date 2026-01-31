@@ -9,5 +9,6 @@ data class PlannedMealEntity(
     val mealId: String,
     val name: String,
     val imageUrl: String,
+    val instructions: String, // Añadimos este campo
     val date: Long
 )

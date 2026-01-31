@@ -3,9 +3,10 @@ package com.example.foodii.feature.planner.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodii.feature.foods.presentation.screen.MealDetailsUIState
-import com.example.foodii.feature.planner.domain.entity.MealDetail
 import com.example.foodii.feature.planner.domain.usecase.GetMealInstructionsUseCase
-import com.example.foodii.feature.planner.domain.usecase.PlanMealUseCase // <--- Importa el nuevo UseCase
+import com.example.foodii.feature.planner.domain.entity.MealDetail
+import com.example.foodii.feature.planner.domain.usecase.PlanMealUseCase
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

@@ -1,78 +1,78 @@
 package com.example.foodii.feature.foods.presentation.screen
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+import com.example.foodii.feature.planner.domain.entity.MealDetail
+import com.example.foodii.feature.planner.presentation.screen.components.MealCard
 import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModel
 import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealDetailsScreen(
-    factory: MealDetailsViewModelFactory
+    factory: MealDetailsViewModelFactory,
+    onBackPressed: () -> Unit,
+    onMealClick: (MealDetail) -> Unit,
+    onViewPlannerClick: () -> Unit // Nueva acción para ir a la agenda
 ) {
     val viewModel: MealDetailsViewModel = viewModel(factory = factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold (
+    Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(title = { Text("Recetas", fontWeight = FontWeight.Bold) })
+            CenterAlignedTopAppBar(
+                title = { Text("Seleccionar Comida", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBackPressed) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    // Botón para ir a ver las comidas agendadas
+                    IconButton(onClick = onViewPlannerClick) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = "Ver Agenda",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            )
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
                 uiState.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                uiState.error != null -> Text("Error: ${uiState.error}", Modifier.align(Alignment.Center), color = Color.Red)
+                uiState.error != null -> Text(
+                    "Error: ${uiState.error}",
+                    Modifier.align(Alignment.Center),
+                    color = Color.Red
+                )
                 else -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         items(uiState.meals) { meal ->
-                            AsyncImage(
-                                model = meal.imageUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxWidth().height(200.dp).clip(
-                                    RoundedCornerShape(12.dp)
-                                ),
-                                contentScale = ContentScale.Crop
+                            MealCard(
+                                name = meal.name,
+                                imageUrl = meal.imageUrl,
+                                onClick = { onMealClick(meal) }
                             )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Text(text = meal.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                            Text(text = "Instrucciones", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(text = meal.instructions, style = MaterialTheme.typography.bodyMedium)
-
-                            Spacer(modifier = Modifier.height(32.dp))
                         }
                     }
                 }
@@ -80,4 +80,3 @@ fun MealDetailsScreen(
         }
     }
 }
-
