@@ -1,4 +1,4 @@
-package com.example.foodii.feature.planner.presentation.screen.components
+package com.example.foodii.feature.planner.presentation.screen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
@@ -21,6 +21,7 @@ import com.example.compose.primaryLight
 import com.example.compose.secondaryLight
 import com.example.compose.surfaceLight
 import com.example.foodii.feature.planner.data.local.entity.PlannedMealEntity
+import com.example.foodii.feature.planner.presentation.components.MealCard
 import com.example.foodii.feature.planner.presentation.viewmodel.PlannerViewModel
 import com.example.ui.theme.TypographyFoodii
 import java.text.SimpleDateFormat

@@ -1,6 +1,7 @@
 package com.example.foodii.core.di
 
 import android.content.Context
+import com.example.foodii.BuildConfig
 import com.example.foodii.core.network.MealApi
 import com.example.foodii.feature.foods.data.datasource.repositories.CategoryRepositoryImpl
 import com.example.foodii.feature.foods.domain.repositories.MelCategoryRepository
@@ -12,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class AppContainer (context: Context){
     private val retrofit = Retrofit.Builder()
-        .baseUrl("https://www.themealdb.com/api/json/v1/1/")
+        .baseUrl(BuildConfig.BASE_URL)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 

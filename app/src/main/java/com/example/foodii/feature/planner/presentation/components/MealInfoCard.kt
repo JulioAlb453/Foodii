@@ -1,4 +1,4 @@
-package com.example.foodii.feature.planner.presentation.screen.components
+package com.example.foodii.feature.planner.presentation.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

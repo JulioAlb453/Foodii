@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
-import androidx.compose.material3.AlertDialogDefaults.containerColor
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,12 +17,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.compose.backgroundLight
 import com.example.compose.onPrimaryLight
-import com.example.compose.onSecondaryLight
 import com.example.compose.primaryLight
-import com.example.compose.secondaryLight
-import com.example.compose.tertiaryLight
 import com.example.foodii.feature.planner.domain.entity.MealDetail
-import com.example.foodii.feature.planner.presentation.screen.components.MealCard
+import com.example.foodii.feature.planner.presentation.components.MealCard
 import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModel
 import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModelFactory
 

@@ -17,8 +17,7 @@ import com.example.foodii.feature.foods.presentation.screen.MealDetailsScreen
 import com.example.foodii.feature.foods.presentation.screen.MealInfoScreen
 import com.example.foodii.feature.planner.di.FoodDetailsModule
 import com.example.foodii.feature.planner.domain.entity.MealDetail
-import com.example.foodii.feature.planner.presentation.screen.components.MealDetailsScreen
-import com.example.foodii.feature.planner.presentation.screen.components.PlannerScreen
+import com.example.foodii.feature.planner.presentation.screen.PlannerScreen
 import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModel
 import com.example.foodii.feature.planner.presentation.viewmodel.PlannerViewModel
 import com.example.foodii.feature.planner.presentation.viewmodel.PlannerViewModelFactory

@@ -18,6 +18,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildFeatures {
+            buildConfig = true
+        }
+
+        buildConfigField("String", "BASE_URL", "\"https://www.themealdb.com/api/json/v1/1/\"")
     }
 
     buildTypes {

@@ -1,6 +1,5 @@
 package com.example.foodii.feature.foods.presentation.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -13,14 +12,11 @@ import androidx.compose.ui.unit.dp
 import com.example.compose.backgroundLight
 import com.example.compose.onPrimaryContainerLight
 import com.example.compose.onPrimaryLight
-import com.example.compose.primaryContainerDark
 import com.example.compose.primaryContainerLight
 import com.example.compose.primaryLight
-import com.example.compose.secondaryLight
-import com.example.compose.tertiaryDark
 import com.example.foodii.feature.planner.domain.entity.MealDetail
-import com.example.foodii.feature.planner.presentation.screen.components.MealInfoCard
-import com.example.foodii.feature.planner.presentation.screen.components.ScheduleMealDialog
+import com.example.foodii.feature.planner.presentation.components.MealInfoCard
+import com.example.foodii.feature.planner.presentation.components.ScheduleMealDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

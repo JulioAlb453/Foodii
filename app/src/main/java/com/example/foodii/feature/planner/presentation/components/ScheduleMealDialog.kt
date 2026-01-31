@@ -1,4 +1,4 @@
-package com.example.foodii.feature.planner.presentation.screen.components
+package com.example.foodii.feature.planner.presentation.components
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
