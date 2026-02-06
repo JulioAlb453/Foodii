@@ -1,7 +1,7 @@
 package com.example.foodii.feature.foodii.domain.usecase
 
-import com.example.foodii.feature.apifoodii.domain.entity.FoodiiMeal
-import com.example.foodii.feature.apifoodii.domain.repository.FoodiiRepository
+import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
+import com.example.foodii.feature.apifoodii.meal.domain.repository.FoodiiRepository
 import kotlinx.coroutines.flow.Flow
 
 class GetFoodiiMealsUseCase(

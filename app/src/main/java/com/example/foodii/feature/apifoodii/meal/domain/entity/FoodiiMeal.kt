@@ -1,4 +1,4 @@
-package com.example.foodii.feature.apifoodii.domain.entity
+package com.example.foodii.feature.apifoodii.meal.domain.entity
 
 import java.time.LocalDate
 
@@ -7,7 +7,7 @@ data class FoodiiMeal(
     val name: String,
     val date: LocalDate,
     val mealTime: FoodiiMealTime,
-    val totalCalories: Double,
+    val totalCalories: Int,
     val createdBy: String,
     val ingredients: List<FoodiiMealIngredient> = emptyList()
 )
@@ -26,5 +26,5 @@ data class FoodiiMealIngredient(
     val ingredientId: String,
     val name: String,
     val amount: Double,
-    val calories: Double? = null
+    val calories: Int = null
 )

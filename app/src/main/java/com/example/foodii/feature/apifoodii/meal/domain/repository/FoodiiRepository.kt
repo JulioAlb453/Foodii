@@ -1,6 +1,6 @@
-package com.example.foodii.feature.apifoodii.domain.repository
+package com.example.foodii.feature.apifoodii.meal.domain.repository
 
-import com.example.foodii.feature.apifoodii.domain.entity.FoodiiMeal
+import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import kotlinx.coroutines.flow.Flow
 
 interface FoodiiRepository {
