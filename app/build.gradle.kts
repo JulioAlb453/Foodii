@@ -76,6 +76,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("javax.inject:javax.inject:1")
+    implementation(libs.javax.inject)
 
     ksp(libs.androidx.room.compiler)
 }

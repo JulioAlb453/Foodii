@@ -18,6 +18,7 @@ ui = "1.7.5"
 room = "2.6.1"
 ksp = "2.1.0-1.0.29"
 coreKtxVersion = "1.15.0"
+javaxInject = "1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -45,6 +46,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtxVersion" }
+javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javaxInject" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -7,6 +7,7 @@ import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealIngredi
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 fun FoodiiMealDto.toDomain(): FoodiiMeal {
     return FoodiiMeal(
@@ -18,7 +19,7 @@ fun FoodiiMealDto.toDomain(): FoodiiMeal {
             LocalDate.now()
         },
         mealTime = FoodiiMealTime.fromString(this.meal_time ?: "snack"),
-        totalCalories = this.total_calories ?: 0.0,
+        totalCalories = this.total_calories ?: 0,
         createdBy = this.created_by ?: "",
         ingredients = this.ingredients?.map { it.toDomain() } ?: emptyList()
     )
@@ -28,10 +29,29 @@ fun FoodiiMealIngredientDto.toDomain(): FoodiiMealIngredient {
     return FoodiiMealIngredient(
         ingredientId = this.ingredient_id ?: "",
         name = this.name ?: "",
-        amount = this.amount ?: 0.0
+        amount = this.amount?: 0,
+        calories = this.calories ?: 0
     )
 }
 
-fun List<FoodiiMealDto>.toDomainList(): List<FoodiiMeal> {
-    return this.map { it.toDomain() }
+
+fun FoodiiMeal.toDto(): FoodiiMealDto {
+    return FoodiiMealDto(
+        id = this.id,
+        name = this.name,
+        date = this.date.format(DateTimeFormatter.ISO_LOCAL_DATE),
+        meal_time = this.mealTime.name.lowercase(Locale.ROOT),
+        total_calories = this.totalCalories,
+        created_by = this.createdBy,
+        ingredients = this.ingredients.map { it.toDto() }
+    )
+}
+
+fun FoodiiMealIngredient.toDto(): FoodiiMealIngredientDto {
+    return FoodiiMealIngredientDto(
+        ingredient_id = this.ingredientId,
+        name = this.name,
+        amount = this.amount,
+        calories = this.calories
+    )
 }

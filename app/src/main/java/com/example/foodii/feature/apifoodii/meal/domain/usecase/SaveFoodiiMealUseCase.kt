@@ -16,7 +16,7 @@ class SaveFoodiiMealUseCase(
         name: String,
         date: LocalDate,
         mealTime: FoodiiMealTime,
-        ingredientsRequest: List<Pair<String, Double>>,
+        ingredientsRequest: List<Pair<String, Int>>,
         userId: String
     ): Result<FoodiiMeal> {
 

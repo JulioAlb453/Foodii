@@ -25,6 +25,6 @@ enum class FoodiiMealTime {
 data class FoodiiMealIngredient(
     val ingredientId: String,
     val name: String,
-    val amount: Double,
-    val calories: Int = null
+    val amount: Int,
+    val calories: Int
 )

@@ -9,7 +9,7 @@ data class FoodiiMealDto(
     val name: String?,
     val date: String?,
     val meal_time: String?,
-    val total_calories: Double?,
+    val total_calories: Int?,
     val created_by: String?,
     val ingredients: List<FoodiiMealIngredientDto>?
 )
@@ -17,5 +17,6 @@ data class FoodiiMealDto(
 data class FoodiiMealIngredientDto(
     val ingredient_id: String?,
     val name: String?,
-    val amount: Double?
+    val amount: Int?,
+    val calories: Int?
 )
