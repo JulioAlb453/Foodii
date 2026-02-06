@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.SaveFoodiiMealUseCase
-import com.example.foodii.feature.foods.presentation.screen.MealFoodiiDetailsUiState
+import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealFoodiiDetailsUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

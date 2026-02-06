@@ -1,4 +1,4 @@
-package com.example.foodii.feature.foods.presentation.screen
+package com.example.foodii.feature.apifoodii.meal.presentation.screen
 
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.planner.domain.entity.MealDetail
