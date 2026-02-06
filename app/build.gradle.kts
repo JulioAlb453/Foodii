@@ -78,6 +78,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("javax.inject:javax.inject:1")
     implementation(libs.javax.inject)
+    
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     ksp(libs.androidx.room.compiler)
 }

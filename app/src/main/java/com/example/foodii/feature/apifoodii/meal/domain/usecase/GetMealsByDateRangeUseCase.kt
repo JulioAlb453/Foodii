@@ -1,11 +1,11 @@
 package com.example.foodii.feature.apifoodii.meal.domain.usecase
+
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
-import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
+import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
 import com.example.foodii.feature.apifoodii.meal.domain.repository.FoodiiMealRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
-import java.util.Locale
 
 class GetMealsByDateRangeUseCase(
     private val mealRepository: FoodiiMealRepository
@@ -23,25 +23,20 @@ class GetMealsByDateRangeUseCase(
             throw IllegalArgumentException("La fecha de inicio debe ser anterior a la fecha de fin")
         }
 
-        return mealRepository.findByDateRange(startDate, endDate).map { meals: List<FoodiiMeal> ->
-            val grouped = meals.groupBy { meal ->
-                meal.date.toString().substringBefore("T")
-            }
+        return mealRepository.findByDateRange(startDate, endDate).map { meals ->
+            val grouped = meals.groupBy { it.date.toString() }
 
             grouped.map { (dateKey, mealsInDate) ->
                 val dailyTotal = mealsInDate.sumOf { it.totalCalories }
 
-                val sortedMeals = mealsInDate.sortedWith(compareBy { meal ->
-                    val time = meal.mealTime.toString()
-
-                    when {
-                        time.equals("breakfast", ignoreCase = true) -> 1
-                        time.equals("lunch", ignoreCase = true) -> 2
-                        time.equals("dinner", ignoreCase = true) -> 3
-                        time.equals("snack", ignoreCase = true) -> 4
-                        else -> 5
+                val sortedMeals = mealsInDate.sortedBy { meal ->
+                    when (meal.mealTime) {
+                        FoodiiMealTime.BREAKFAST -> 1
+                        FoodiiMealTime.LUNCH -> 2
+                        FoodiiMealTime.DINNER -> 3
+                        FoodiiMealTime.SNACK -> 4
                     }
-                })
+                }
 
                 DailySummary(
                     date = dateKey,
