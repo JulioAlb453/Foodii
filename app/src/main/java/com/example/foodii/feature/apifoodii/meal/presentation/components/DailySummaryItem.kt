@@ -12,6 +12,7 @@ import com.example.compose.onSurfaceLight
 import com.example.compose.primaryLight
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
+import com.example.ui.theme.TypographyFoodii
 
 @Composable
 fun DailySummaryItem(
@@ -23,7 +24,6 @@ fun DailySummaryItem(
             .fillMaxWidth()
             .padding(bottom = 24.dp)
     ) {
-        // Cabecera del día
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -32,15 +32,15 @@ fun DailySummaryItem(
             verticalAlignment = Alignment.Bottom
         ) {
             Text(
-                text = summary.date, // Formato yyyy-MM-dd
-                style = MaterialTheme.typography.titleLarge,
+                text = summary.date,
+                style = TypographyFoodii.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = onSurfaceLight
             )
             
             Text(
                 text = "Total: ${summary.totalCalories} kcal",
-                style = MaterialTheme.typography.labelMedium,
+                style = TypographyFoodii.labelMedium,
                 color = primaryLight,
                 fontWeight = FontWeight.Bold
             )
@@ -48,7 +48,6 @@ fun DailySummaryItem(
 
         HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
 
-        // Lista de comidas del día
         summary.meals.forEach { meal ->
             MealItemCard(
                 meal = meal,

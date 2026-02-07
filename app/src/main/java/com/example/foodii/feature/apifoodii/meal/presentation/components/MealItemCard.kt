@@ -11,9 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.compose.outlineDark
+import com.example.compose.outlineLight
+import com.example.compose.primaryDark
 import com.example.compose.primaryLight
 import com.example.compose.surfaceVariantLight
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
+import com.example.ui.theme.TypographyFoodii
 
 @Composable
 fun MealItemCard(
@@ -28,8 +32,9 @@ fun MealItemCard(
             .padding(vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = surfaceVariantLight.copy(alpha = 0.4f)
-        )
+            containerColor = surfaceVariantLight
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
     ) {
         Row(
             modifier = Modifier
@@ -40,7 +45,7 @@ fun MealItemCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    color = primaryLight.copy(alpha = 0.1f),
+                    color = primaryDark,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.size(48.dp)
                 ) {
@@ -57,20 +62,20 @@ fun MealItemCard(
                 Column {
                     Text(
                         text = meal.name,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = TypographyFoodii.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = meal.mealTime.name.lowercase().replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
+                        style = TypographyFoodii.bodySmall,
+                        color = outlineDark
                     )
                 }
             }
             
             Text(
                 text = "${meal.totalCalories} kcal",
-                style = MaterialTheme.typography.labelLarge,
+                style = TypographyFoodii.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = primaryLight,
                 fontSize = 14.sp

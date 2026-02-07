@@ -28,12 +28,13 @@ class IngredientViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val user = authRepository.getCurrentUser()
-            if (user?.token == null) {
+            if (user == null) {
                 _uiState.update { it.copy(isLoading = false, error = "User not authenticated") }
                 return@launch
             }
 
-            val result = getIngredientsUseCase(token = user.token)
+            // Cambiamos de token a userId para coincidir con el UseCase actualizado
+            val result = getIngredientsUseCase(userId = user.id)
             _uiState.update { state ->
                 result.fold(
                     onSuccess = { list -> state.copy(isLoading = false, ingredients = list) },
@@ -46,7 +47,7 @@ class IngredientViewModel @Inject constructor(
     fun calculate(ingredientId: String, amount: Int) {
         viewModelScope.launch {
             val user = authRepository.getCurrentUser()
-            if (user?.token == null) {
+            if (user == null) {
                 _uiState.update { it.copy(error = "User not authenticated") }
                 return@launch
             }

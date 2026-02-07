@@ -5,22 +5,22 @@ import java.util.Date
 data class Ingredient(
     val id: String,
     val name: String,
-    val caloriesPer100g: Int,
+    val caloriesPer100g: Double,
     val createdBy: String,
-    val createdAt: Date
+    val createdAt: Date?
 ) {
 
-    fun calculateCalories(amount: Int): Int {
-        return ((amount.toDouble() * caloriesPer100g) / 100.0).toInt()
+    fun calculateCalories(amount: Int): Double {
+        return (amount.toDouble() * caloriesPer100g) / 100.0
     }
 
     companion object {
         fun create(
             id: String,
             name: String,
-            caloriesPer100g: Int,
+            caloriesPer100g: Double,
             createdBy: String,
-            createdAt: Date
+            createdAt: Date?
         ): Ingredient {
             return Ingredient(id, name, caloriesPer100g, createdBy, createdAt)
         }

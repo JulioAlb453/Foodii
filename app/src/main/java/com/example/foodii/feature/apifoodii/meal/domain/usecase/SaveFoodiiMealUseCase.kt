@@ -34,7 +34,7 @@ class SaveFoodiiMealUseCase(
         for (item in ingredientsRequest) {
             val (ingredientId, amount) = item
             
-            val ingredient = ingredientRepository.findById(id = ingredientId)
+            val ingredient = ingredientRepository.findById(id = ingredientId, userId = userId)
                 ?: return Result.failure(Exception("Ingrediente no encontrado"))
 
             if (ingredient.createdBy != userId) {

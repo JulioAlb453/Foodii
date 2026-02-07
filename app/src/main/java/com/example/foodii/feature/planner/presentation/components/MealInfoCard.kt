@@ -31,8 +31,9 @@ fun MealInfoCard(
             .padding(16.dp),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = surfaceContainerLight
-        )
+            containerColor = surfaceContainerLight,
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
     ) {
         Column(
             modifier = Modifier
