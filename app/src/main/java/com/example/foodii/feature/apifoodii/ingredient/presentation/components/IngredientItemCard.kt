@@ -11,7 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.compose.onSurfaceLight
+import com.example.compose.outlineLight
+import com.example.compose.surfaceContainerLight
 import com.example.foodii.feature.apifoodii.ingredient.domain.entity.Ingredient
+import com.example.ui.theme.TypographyFoodii
 
 @Composable
 fun IngredientItemCard(
@@ -23,7 +27,7 @@ fun IngredientItemCard(
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = surfaceContainerLight
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -51,28 +55,28 @@ fun IngredientItemCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = ingredient.name,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = TypographyFoodii.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = onSurfaceLight
                 )
                 Text(
                     text = "Valor nutricional base",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.outline
+                    style = TypographyFoodii.labelMedium,
+                    color = outlineLight
                 )
             }
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "${ingredient.caloriesPer100g.toInt()}",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = TypographyFoodii.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = "kcal / 100g",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    style = TypographyFoodii.labelSmall,
+                    color = outlineLight,
                     fontSize = 10.sp
                 )
             }

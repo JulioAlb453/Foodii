@@ -1,5 +1,6 @@
 package com.example.foodii.feature.apifoodii.ingredient.presentation.screen
 
+import android.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +17,10 @@ import androidx.compose.ui.unit.dp
 import com.example.compose.FoodiiTheme
 import com.example.compose.backgroundDark
 import com.example.compose.backgroundLight
+import com.example.compose.onPrimaryDark
+import com.example.compose.onPrimaryLight
+import com.example.compose.primaryDark
+import com.example.compose.primaryLight
 import com.example.foodii.feature.apifoodii.ingredient.presentation.components.IngredientItemCard
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
 
@@ -46,9 +51,9 @@ fun IngredientsScreen(
                 Column {
                     CenterAlignedTopAppBar(
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = primaryDark,
+                            titleContentColor = onPrimaryDark,
+                            navigationIconContentColor = onPrimaryDark
                         ),
                         title = { Text("Catálogo de Ingredientes", fontWeight = FontWeight.Bold) },
                         navigationIcon = {
@@ -68,14 +73,17 @@ fun IngredientsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                            placeholder = { Text("Buscar ingrediente...", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)) },
+                            placeholder = {
+                                Text("Buscar ingrediente...", color = primaryLight)
+
+                                          },
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary) },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.onPrimary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
-                                focusedTextColor = MaterialTheme.colorScheme.onPrimary,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onPrimary,
-                                cursorColor = MaterialTheme.colorScheme.onPrimary
+                                focusedBorderColor = onPrimaryDark,
+                                unfocusedBorderColor =onPrimaryDark,
+                                focusedTextColor = primaryLight,
+                                unfocusedTextColor = primaryDark,
+                                cursorColor = onPrimaryLight
                             ),
                             shape = RoundedCornerShape(12.dp),
                             singleLine = true
@@ -93,7 +101,7 @@ fun IngredientsScreen(
                     uiState.isLoading -> {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center),
-                            color = MaterialTheme.colorScheme.primary
+                            color = primaryDark
                         )
                     }
                     uiState.error != null -> {

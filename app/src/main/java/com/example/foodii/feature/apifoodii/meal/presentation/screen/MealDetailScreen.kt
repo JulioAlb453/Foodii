@@ -73,7 +73,8 @@ fun MealDetailScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = primaryDark)
+                            colors = CardDefaults.cardColors(containerColor = primaryDark),
+                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
                         ) {
                             Column(modifier = Modifier.padding(20.dp)) {
                                 Text(
@@ -105,7 +106,8 @@ fun MealDetailScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = surfaceVariantLight)
+                            colors = CardDefaults.cardColors(containerColor = surfaceVariantLight),
+                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
@@ -155,7 +157,8 @@ fun MealDetailScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = surfaceContainerLight)
+                            colors = CardDefaults.cardColors(containerColor = surfaceContainerLight),
+                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),

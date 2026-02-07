@@ -33,7 +33,8 @@ fun MealItemCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = surfaceVariantLight
-        )
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
     ) {
         Row(
             modifier = Modifier
