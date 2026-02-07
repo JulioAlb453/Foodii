@@ -10,13 +10,14 @@ class CalculateCaloriesUseCase @Inject constructor(
     suspend operator fun invoke(
         ingredientId: String,
         amount: Int,
-        userId: String
+        userId: String,
     ): Result<CalculateCaloriesResponse> {
         return try {
             if (amount <= 0) {
                 return Result.failure(Exception("La cantidad debe ser mayor que 0"))
             }
 
+            // Pasamos el token al repositorio según el nuevo contrato
             val ingredient = ingredientRepository.findById(ingredientId)
                 ?: return Result.failure(Exception("Ingrediente no encontrado"))
 

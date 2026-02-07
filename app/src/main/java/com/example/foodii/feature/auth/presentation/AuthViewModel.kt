@@ -3,6 +3,7 @@ package com.example.foodii.feature.auth.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodii.feature.auth.domain.usecase.LoginUseCase
+import com.example.foodii.feature.auth.domain.usecase.LogoutUseCase
 import com.example.foodii.feature.auth.domain.usecase.RegisterUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +12,8 @@ import kotlinx.coroutines.launch
 
 class AuthViewModel(
     private val loginUseCase: LoginUseCase,
-    private val registerUseCase: RegisterUseCase
+    private val registerUseCase: RegisterUseCase,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -48,6 +50,13 @@ class AuthViewModel(
                     }
                 )
             }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            logoutUseCase()
+            _uiState.update { AuthUiState() }
         }
     }
     

@@ -2,13 +2,13 @@ package com.example.foodii.feature.apifoodii.meal.domain.usecase
 
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
-import com.example.foodii.feature.apifoodii.meal.domain.repository.FoodiiMealRepository
+import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 
 class GetMealsByDateRangeUseCase(
-    private val mealRepository: FoodiiMealRepository
+    private val mealRepository: MealFoodiiRepository
 ) {
     operator fun invoke(
         userId: String,
@@ -23,7 +23,7 @@ class GetMealsByDateRangeUseCase(
             throw IllegalArgumentException("La fecha de inicio debe ser anterior a la fecha de fin")
         }
 
-        return mealRepository.findByDateRange(startDate, endDate).map { meals ->
+        return mealRepository.findByDateRange(startDate, endDate, userId).map { meals ->
             val grouped = meals.groupBy { it.date.toString() }
 
             grouped.map { (dateKey, mealsInDate) ->

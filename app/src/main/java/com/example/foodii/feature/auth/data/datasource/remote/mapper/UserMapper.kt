@@ -4,23 +4,27 @@ import com.example.foodii.feature.auth.data.datasource.remote.model.AuthResponse
 import com.example.foodii.feature.auth.data.datasource.remote.model.UserDto
 import com.example.foodii.feature.auth.domain.entity.User
 
-fun UserDto.toDomain(token: String? = null): User {
+
+fun AuthResponse?.toDomain(): User {
+    // Si la respuesta es nula o no fue exitosa
+    if (this?.data == null) {
+        return User(id = "", username = "", token = null)
+    }
+
+    val userData = this.data.user
+    val token = this.data.token
+
     return User(
-        id = this.id ?: "",
-        username = this.username ?: "",
+        id = userData?.id ?: "",
+        username = userData?.username ?: "Usuario",
         token = token
     )
-}
-
-fun AuthResponse.toDomain(): User {
-    return this.user.toDomain(this.token)
 }
 
 fun User.toDto(): UserDto {
     return UserDto(
         id = this.id,
         username = this.username,
-        created_at = null,
-        updated_at = null
+        createdAt = null // No es necesario enviar esto a la API
     )
 }

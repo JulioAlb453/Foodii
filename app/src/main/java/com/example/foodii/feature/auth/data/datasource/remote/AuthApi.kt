@@ -1,17 +1,17 @@
 package com.example.foodii.feature.auth.data.datasource.remote
 
 import com.example.foodii.feature.auth.data.datasource.remote.model.AuthResponse
-import com.example.foodii.feature.auth.data.datasource.remote.model.UserDto
 import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface AuthApi {
-    @POST("auth/login")
+    @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
-    @POST("auth/register")
+    @POST("api/auth/register")
     suspend fun register(@Body request: LoginRequest): AuthResponse
 }
+
 
 data class LoginRequest(
     val username: String,

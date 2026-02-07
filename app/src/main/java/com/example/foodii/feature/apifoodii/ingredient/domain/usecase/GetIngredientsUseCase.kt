@@ -9,7 +9,7 @@ class GetIngredientsUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(
-        userId: String,
+        token: String,
         search: String? = null
     ): Result<List<Ingredient>> {
         return try {

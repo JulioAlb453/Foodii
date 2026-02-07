@@ -1,6 +1,7 @@
 package com.example.foodii.feature.auth.data.datasource.local
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -21,27 +22,38 @@ class AuthLocalDataSourceImpl(private val context: Context) : AuthLocalDataSourc
     }
 
     override suspend fun saveUser(user: User) {
-        context.dataStore.edit { preferences ->
-            preferences[USER_ID] = user.id
-            preferences[USERNAME] = user.username
-            user.token?.let { preferences[TOKEN] = it }
+        try {
+            context.dataStore.edit { preferences ->
+                preferences[USER_ID] = user.id
+                preferences[USERNAME] = user.username
+                user.token?.let { 
+                    preferences[TOKEN] = it 
+                    Log.d("AUTH_LOCAL", "Token guardado correctamente: ${it.take(10)}...")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AUTH_LOCAL", "Error al guardar usuario en DataStore: ${e.message}")
         }
     }
 
     override fun getUser(): Flow<User?> {
         return context.dataStore.data.map { preferences ->
-            val id = preferences[USER_ID] ?: return@map null
-            val username = preferences[USERNAME] ?: ""
+            val id = preferences[USER_ID]
             val token = preferences[TOKEN]
-            User(id, username, token)
+            
+            if (id == null || token == null) {
+                Log.w("AUTH_LOCAL", "getUser: No se encontró sesión (id=$id, token=${token != null})")
+                return@map null
+            }
+            
+            User(id, preferences[USERNAME] ?: "", token)
         }
     }
 
     override suspend fun clearUser() {
         context.dataStore.edit { preferences ->
-            preferences.remove(USER_ID)
-            preferences.remove(USERNAME)
-            preferences.remove(TOKEN)
+            preferences.clear()
         }
+        Log.d("AUTH_LOCAL", "Sesión eliminada de DataStore")
     }
 }

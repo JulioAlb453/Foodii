@@ -1,22 +1,26 @@
 package com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model
 
+import com.google.gson.annotations.SerializedName
+
 data class FoodiiMealResponse(
-    val meals: List<FoodiiMealDto>
+    @SerializedName("success") val success: Boolean?,
+    @SerializedName("data") val meals: List<FoodiiMealDto>?
 )
 
 data class FoodiiMealDto(
-    val id: String?,
-    val name: String?,
-    val date: String?,
-    val meal_time: String?,
-    val total_calories: Int?,
-    val created_by: String?,
-    val ingredients: List<FoodiiMealIngredientDto>?
+    @SerializedName("id") val id: String?,
+    @SerializedName("name") val name: String?,
+    @SerializedName("date") val date: String?,
+    @SerializedName("mealTime") val mealTime: String?,
+    @SerializedName("ingredients") val ingredients: List<FoodiiMealIngredientDto>?,
+    @SerializedName("totalCalories") val totalCalories: Int?,
+    @SerializedName("CreatedBy") val createdBy: String?,
+    @SerializedName("createdAt") val createdAt: String?
 )
 
 data class FoodiiMealIngredientDto(
-    val ingredient_id: String?,
-    val name: String?,
-    val amount: Int?,
-    val calories: Int?
+    @SerializedName("ingredientId") val ingredientId: String?,
+    @SerializedName("amount") val amount: Int?,
+    @SerializedName("ingredientName") val ingredientName: String?,
+    @SerializedName("calories") val calories: Int?
 )

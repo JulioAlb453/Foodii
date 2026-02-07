@@ -5,17 +5,15 @@ import com.example.foodii.feature.foods.domain.usecases.GetMelCategoryUseCase
 import com.example.foodii.feature.foods.presentation.viewmodel.MealCategoryViewModelFactory
 
 class CategoryModule(
-    private val appContainer: AppContainer
+    //private val appContainer: AppContainer
 ){
 
-    private fun provideGetCategoryUseCase(): GetMelCategoryUseCase{
-        return GetMelCategoryUseCase(appContainer.melCategoryRepository)
-    }
+ //   private fun provideGetCategoryUseCase(): GetMelCategoryUseCase{
+   //     return GetMelCategoryUseCase(appContainer.melCategor"yRepository)
+    //}
 
-    fun provideCategoryViewModelFactory(): MealCategoryViewModelFactory{
-        return MealCategoryViewModelFactory(
-            getMelCategoryUseCase = provideGetCategoryUseCase()
-        )
-    }
+    //fun provideCategoryViewModelFactory(): MealCategoryViewModelFactory{
+      //  return MealCategoryViewModelFactory(
+        //    getMelCategoryUseCase = provideGetCategoryUseCase()
 
-}
+    }

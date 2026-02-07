@@ -1,0 +1,99 @@
+package com.example.foodii.feature.apifoodii.meal.presentation.screen
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.compose.backgroundLight
+import com.example.compose.onPrimaryLight
+import com.example.compose.primaryLight
+import com.example.foodii.feature.apifoodii.meal.presentation.components.MealItemCard
+import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MealsListScreen(
+    viewModel: MealFoodiiViewModel,
+    userId: String,
+    onViewSummaryClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onMealClick: (String) -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val meals by viewModel.allMeals.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadAllMeals(userId)
+    }
+
+    Scaffold(
+        containerColor = backgroundLight,
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = primaryLight,
+                    titleContentColor = onPrimaryLight,
+                    navigationIconContentColor = onPrimaryLight
+                ),
+                title = { Text("Platillos Disponibles", fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = onViewSummaryClick) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = "Ver Agenda",
+                            tint = onPrimaryLight
+                        )
+                    }
+                    IconButton(onClick = onLogoutClick) {
+                        Icon(
+                            imageVector = Icons.Default.Logout,
+                            contentDescription = "Cerrar Sesión",
+                            tint = onPrimaryLight
+                        )
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            when {
+                uiState.isLoading && meals.isEmpty() -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                meals.isEmpty() -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.Restaurant, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("No hay platillos creados", color = MaterialTheme.colorScheme.outline)
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(meals) { meal ->
+                            MealItemCard(
+                                meal = meal,
+                                onClick = { onMealClick(meal.id) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

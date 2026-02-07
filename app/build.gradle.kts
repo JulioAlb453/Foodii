@@ -24,6 +24,8 @@ android {
         }
 
         buildConfigField("String", "BASE_URL", "\"https://www.themealdb.com/api/json/v1/1/\"")
+        
+        buildConfigField("String", "FOODII_BASE_URL", "\"http://52.206.95.157:3000/\"")
     }
 
     buildTypes {
@@ -80,6 +82,9 @@ dependencies {
     implementation(libs.javax.inject)
     
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    
+    // Logs de red OkHttp
+    implementation(libs.okhttp.logging)
 
     ksp(libs.androidx.room.compiler)
 }

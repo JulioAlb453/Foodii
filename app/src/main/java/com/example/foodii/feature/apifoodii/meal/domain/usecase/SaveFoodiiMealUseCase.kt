@@ -3,13 +3,13 @@ package com.example.foodii.feature.apifoodii.meal.domain.usecase
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealIngredient
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
-import com.example.foodii.feature.apifoodii.meal.domain.repository.FoodiiRepository
+import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
 import java.time.LocalDate
 import java.util.UUID
 
 class SaveFoodiiMealUseCase(
-    private val mealRepository: FoodiiRepository,
+    private val mealRepository: MealFoodiiRepository,
     private val ingredientRepository: IngredientRepository
 ) {
     suspend operator fun invoke(
@@ -33,19 +33,17 @@ class SaveFoodiiMealUseCase(
 
         for (item in ingredientsRequest) {
             val (ingredientId, amount) = item
-
-            if (amount <= 0) {
-                return Result.failure(Exception("La cantidad debe ser mayor que 0"))
-            }
-
-            val ingredient = ingredientRepository.findById(ingredientId)
+            
+            // Ya no pasamos el token aquí, el interceptor lo maneja
+            val ingredient = ingredientRepository.findById(id = ingredientId)
                 ?: return Result.failure(Exception("Ingrediente no encontrado"))
 
+            // Mantenemos la vinculación con el usuario
             if (ingredient.createdBy != userId) {
                 return Result.failure(Exception("No puedes usar ingredientes de otros usuarios"))
             }
 
-            val calories = ingredient.calculateCalories(amount.toInt())
+            val calories = ((ingredient.caloriesPer100g * amount) / 100)
 
             ingredientDetails.add(
                 FoodiiMealIngredient(
