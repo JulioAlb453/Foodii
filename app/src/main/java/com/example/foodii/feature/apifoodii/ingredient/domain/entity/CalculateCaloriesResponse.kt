@@ -4,6 +4,6 @@ data class CalculateCaloriesResponse(
     val ingredientId: String,
     val ingredientName: String,
     val amount: Int,
-    val caloriesPer100g: Int,
-    val calculatedCalories: Int
+    val caloriesPer100g: Double,
+    val calculatedCalories: Double
 )

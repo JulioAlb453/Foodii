@@ -63,8 +63,11 @@ class AppContainer(context: Context) {
         AuthRepositoryImpl(authApi, authLocalDataSource)
     }
 
-    // Usamos el módulo que tienes abierto para centralizar las factories
     val foodiiFeatureModule: FoodiiFeatureModule by lazy {
-        FoodiiFeatureModule(foodiiRepository, ingredientRepository)
+        FoodiiFeatureModule(
+            mealRepository = foodiiRepository,
+            ingredientRepository = ingredientRepository,
+            authRepository = authRepository
+        )
     }
 }

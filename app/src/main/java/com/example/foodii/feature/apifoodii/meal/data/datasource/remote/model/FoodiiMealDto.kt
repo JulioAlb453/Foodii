@@ -7,6 +7,11 @@ data class FoodiiMealResponse(
     @SerializedName("data") val meals: List<FoodiiMealDto>?
 )
 
+data class SingleMealResponse(
+    @SerializedName("success") val success: Boolean?,
+    @SerializedName("data") val meal: FoodiiMealDto?
+)
+
 data class FoodiiMealDto(
     @SerializedName("id") val id: String?,
     @SerializedName("name") val name: String?,

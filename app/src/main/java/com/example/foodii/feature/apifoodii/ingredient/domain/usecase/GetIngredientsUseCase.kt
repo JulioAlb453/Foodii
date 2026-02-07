@@ -9,11 +9,11 @@ class GetIngredientsUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(
-        token: String,
+        userId: String,
         search: String? = null
     ): Result<List<Ingredient>> {
         return try {
-            val ingredients = ingredientRepository.getAllIngredients()
+            val ingredients = ingredientRepository.getAllIngredients(userId = userId)
 
             val filteredIngredients = if (!search.isNullOrBlank()) {
                 val searchLower = search.lowercase()

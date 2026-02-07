@@ -10,18 +10,19 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
     private val api: FoodiiAPI
 ) : IngredientRepository {
 
-    override suspend fun getAllIngredients(): List<Ingredient> {
+    override suspend fun getAllIngredients(userId: String): List<Ingredient> {
         return try {
-            val response = api.getAllIngredientsAPI()
-            response.ingredients.map { it.toDomain() }
+            val response = api.getAllIngredientsAPI(userId = userId)
+            response.ingredients?.map { it.toDomain() } ?: emptyList()
         } catch (e: Exception) {
             emptyList()
         }
     }
 
-    override suspend fun findById(id: String): Ingredient? {
+    override suspend fun findById(id: String, userId: String): Ingredient? {
         return try {
-            api.getIngredientByIdAPI(id = id).toDomain()
+            val response = api.getIngredientByIdAPI(id = id)
+            response.ingredient?.toDomain()
         } catch (e: Exception) {
             null
         }

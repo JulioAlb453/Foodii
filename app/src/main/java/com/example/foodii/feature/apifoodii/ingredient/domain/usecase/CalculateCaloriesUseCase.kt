@@ -17,15 +17,16 @@ class CalculateCaloriesUseCase @Inject constructor(
                 return Result.failure(Exception("La cantidad debe ser mayor que 0"))
             }
 
-            // Pasamos el token al repositorio según el nuevo contrato
-            val ingredient = ingredientRepository.findById(ingredientId)
+            // Actualizado para pasar userId según el nuevo contrato del repositorio
+            val ingredient = ingredientRepository.findById(id = ingredientId, userId = userId)
                 ?: return Result.failure(Exception("Ingrediente no encontrado"))
 
             if (ingredient.createdBy != userId) {
                 return Result.failure(Exception("No tienes permiso para usar este ingrediente"))
             }
 
-            val calculatedCalories = (ingredient.caloriesPer100g * amount) / 100
+            // Cálculo usando Double para mayor precisión
+            val calculatedCalories = (ingredient.caloriesPer100g * amount) / 100.0
 
             Result.success(
                 CalculateCaloriesResponse(

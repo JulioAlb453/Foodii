@@ -5,6 +5,7 @@ import com.example.foodii.feature.apifoodii.ingredient.domain.usecase.CalculateC
 import com.example.foodii.feature.apifoodii.ingredient.domain.usecase.GetIngredientsUseCase
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModelFactory
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
+import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRangeUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.SaveFoodiiMealUseCase
@@ -29,6 +30,10 @@ class IngredientFoodiiModule(
         return GetMealsUseCase(mealRepository)
     }
 
+    private fun provideGetFoodiiMealByIdUseCase(): GetFoodiiMealByIdUseCase {
+        return GetFoodiiMealByIdUseCase(mealRepository, ingredientRepository)
+    }
+
     private fun provideGetIngredientsUseCase(): GetIngredientsUseCase {
         return GetIngredientsUseCase(ingredientRepository)
     }
@@ -42,6 +47,7 @@ class IngredientFoodiiModule(
             saveFoodiiMealUseCase = provideSaveFoodiiMealUseCase(),
             getMealsByDateRangeUseCase = provideGetMealsByDateRangeUseCase(),
             getMealsUseCase = provideGetMealsUseCase(),
+            getFoodiiMealByIdUseCase = provideGetFoodiiMealByIdUseCase()
         )
     }
 

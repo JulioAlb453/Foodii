@@ -17,35 +17,30 @@ class MealFoodiiRepositoryImpl(
             val response = api.getMealsAPI(userId = userId)
 
             if (response.success == true && response.meals != null) {
-                Log.d("AWS_API", "ÉXITO: Se recibieron ${response.meals.size} platillos para el usuario $userId")
                 emit(response.meals.map { it.toDomain() })
             } else {
-                Log.w("AWS_API", "ADVERTENCIA: La API respondió success=false o data vacía")
                 emit(emptyList())
             }
         } catch (e: Exception) {
-            Log.e("AWS_API", "ERROR CRÍTICO al obtener comidas: ${e.localizedMessage}")
-            e.printStackTrace()
+            Log.e("AWS_API", "Error al obtener comidas: ${e.localizedMessage}")
             emit(emptyList())
         }
     }
 
     override fun findByDate(date: String, userId: String): Flow<List<FoodiiMeal>> = flow {
         try {
-            val response = api.getMealsAPI(date = date, userId = userId)
+            val response = api.getMealsAPI(userId = userId, date = date)
             emit(response.meals?.map { it.toDomain() } ?: emptyList())
         } catch (e: Exception) {
-            Log.e("AWS_API", "Error al buscar por fecha: ${e.message}")
             emit(emptyList())
         }
     }
 
     override fun findByDateRange(startDate: String, endDate: String, userId: String): Flow<List<FoodiiMeal>> = flow {
         try {
-            val response = api.getMealsByRange(startDate = startDate, endDate = endDate)
+            val response = api.getMealsByRange(userId = userId, startDate = startDate, endDate = endDate)
             emit(response.meals?.map { it.toDomain() } ?: emptyList())
         } catch (e: Exception) {
-            Log.e("AWS_API", "Error en rango de fechas: ${e.message}")
             emit(emptyList())
         }
     }
@@ -57,7 +52,7 @@ class MealFoodiiRepositoryImpl(
     override suspend fun getMealById(id: String, userId: String): FoodiiMeal? {
         return try {
             val response = api.getMealById(id = id)
-            response.meals?.firstOrNull()?.toDomain()
+            response.meal?.toDomain()
         } catch (e: Exception) {
             Log.e("AWS_API", "Error al obtener comida por ID: ${e.message}")
             null

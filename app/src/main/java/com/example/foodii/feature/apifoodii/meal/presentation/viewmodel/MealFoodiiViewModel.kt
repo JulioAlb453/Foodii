@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
+import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRangeUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.SaveFoodiiMealUseCase
@@ -19,7 +20,8 @@ import java.time.LocalDate
 class MealFoodiiViewModel(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
     private val getMealsByDateRangeUseCase: GetMealsByDateRangeUseCase,
-    private val getMealsUseCase: GetMealsUseCase
+    private val getMealsUseCase: GetMealsUseCase,
+    private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MealFoodiiDetailsUiState())
@@ -31,19 +33,37 @@ class MealFoodiiViewModel(
     private val _allMeals = MutableStateFlow<List<FoodiiMeal>>(emptyList())
     val allMeals = _allMeals.asStateFlow()
 
+    private val _selectedMeal = MutableStateFlow<FoodiiMeal?>(null)
+    val selectedMeal = _selectedMeal.asStateFlow()
+
     fun loadAllMeals(userId: String) {
-        Log.d("MEAL_VM", "loadAllMeals llamado con userId: $userId")
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
                 getMealsUseCase(userId).collect { meals ->
-                    Log.d("MEAL_VM", "Se recibieron ${meals.size} comidas de la API")
                     _allMeals.value = meals
                     _uiState.update { it.copy(isLoading = false) }
                 }
             } catch (e: Exception) {
-                Log.e("MEAL_VM", "Error al cargar comidas: ${e.localizedMessage}")
                 _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+            }
+        }
+    }
+
+    fun loadMealDetail(mealId: String, userId: String) {
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        viewModelScope.launch {
+            val result = getFoodiiMealByIdUseCase(mealId, userId)
+            _uiState.update { state ->
+                result.fold(
+                    onSuccess = { meal ->
+                        _selectedMeal.value = meal
+                        state.copy(isLoading = false)
+                    },
+                    onFailure = { error ->
+                        state.copy(isLoading = false, error = error.message)
+                    }
+                )
             }
         }
     }
