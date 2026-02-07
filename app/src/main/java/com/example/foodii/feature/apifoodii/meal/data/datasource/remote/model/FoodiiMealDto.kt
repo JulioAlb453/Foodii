@@ -13,7 +13,7 @@ data class FoodiiMealDto(
     @SerializedName("date") val date: String?,
     @SerializedName("mealTime") val mealTime: String?,
     @SerializedName("ingredients") val ingredients: List<FoodiiMealIngredientDto>?,
-    @SerializedName("totalCalories") val totalCalories: Int?,
+    @SerializedName("totalCalories") val totalCalories: Double?,
     @SerializedName("CreatedBy") val createdBy: String?,
     @SerializedName("createdAt") val createdAt: String?
 )
@@ -22,5 +22,5 @@ data class FoodiiMealIngredientDto(
     @SerializedName("ingredientId") val ingredientId: String?,
     @SerializedName("amount") val amount: Int?,
     @SerializedName("ingredientName") val ingredientName: String?,
-    @SerializedName("calories") val calories: Int?
+    @SerializedName("calories") val calories: Double?
 )

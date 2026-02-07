@@ -16,7 +16,7 @@ class GetFoodiiMealByIdUseCase(
             val detail = ingredientRepository.findById(basicIngredient.ingredientId)
             
             if (detail != null) {
-                val calories = ((detail.caloriesPer100g * basicIngredient.amount) / 100)
+                val calories = ((detail.caloriesPer100g * basicIngredient.amount) / 100.0)
                 basicIngredient.copy(
                     name = detail.name,
                     calories = calories

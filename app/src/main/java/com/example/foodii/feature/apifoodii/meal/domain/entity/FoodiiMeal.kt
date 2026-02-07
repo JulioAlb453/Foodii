@@ -7,7 +7,7 @@ data class FoodiiMeal(
     val name: String,
     val date: LocalDate,
     val mealTime: FoodiiMealTime,
-    val totalCalories: Int,
+    val totalCalories: Double,
     val createdBy: String,
     val ingredients: List<FoodiiMealIngredient> = emptyList()
 )
@@ -26,5 +26,5 @@ data class FoodiiMealIngredient(
     val ingredientId: String,
     val name: String,
     val amount: Int,
-    val calories: Int
+    val calories: Double
 )

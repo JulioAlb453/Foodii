@@ -1,9 +1,9 @@
 package com.example.foodii.feature.apifoodii.ingredient.domain.entity
 
 data class CaloriesSummary(
-    val totalCalories: Int,
+    val totalCalories: Double,
     val mealsCount: Int,
-    val averageCaloriesPerMeal: Int,
+    val averageCaloriesPerMeal: Double,
     val mealsByTime: MealsByTime
 )
 

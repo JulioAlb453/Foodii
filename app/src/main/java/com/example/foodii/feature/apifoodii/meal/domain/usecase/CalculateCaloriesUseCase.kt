@@ -20,7 +20,7 @@ class CalculateCaloriesUseCase(
         
         return mealsFlow.map { meals ->
             if (meals.isEmpty()) {
-                return@map CaloriesSummary(0, 0, 0, MealsByTime())
+                return@map CaloriesSummary(0.0, 0, 0.0, MealsByTime())
             }
 
             val totalCalories = meals.sumOf { it.totalCalories }
@@ -32,7 +32,7 @@ class CalculateCaloriesUseCase(
             CaloriesSummary(
                 totalCalories = totalCalories,
                 mealsCount = meals.size,
-                averageCaloriesPerMeal = if (meals.isNotEmpty()) (totalCalories.toDouble() / meals.size).roundToInt() else 0,
+                averageCaloriesPerMeal = if (meals.isNotEmpty()) (totalCalories.toDouble() / meals.size) else 0.0,
                 mealsByTime = MealsByTime(
                     breakfast = counts["breakfast"] ?: 0,
                     lunch = counts["lunch"] ?: 0,

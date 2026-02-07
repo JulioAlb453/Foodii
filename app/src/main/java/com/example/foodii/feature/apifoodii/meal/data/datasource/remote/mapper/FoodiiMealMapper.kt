@@ -20,7 +20,7 @@ fun FoodiiMealDto.toDomain(): FoodiiMeal {
             LocalDate.now()
         },
         mealTime = FoodiiMealTime.fromString(this.mealTime ?: "snack"),
-        totalCalories = (this.totalCalories ?: 0),
+        totalCalories = (this.totalCalories ?: 0.0),
         createdBy = this.createdBy ?: "",
         ingredients = this.ingredients?.map { it.toDomain() } ?: emptyList()
     )
@@ -31,7 +31,7 @@ fun FoodiiMealIngredientDto.toDomain(): FoodiiMealIngredient {
         ingredientId = this.ingredientId ?: "",
         name = this.ingredientName ?: "",
         amount = (this.amount ?: 0),
-        calories = (this.calories ?: 0)
+        calories = (this.calories ?: 0.0)
     )
 }
 

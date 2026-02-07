@@ -29,21 +29,19 @@ class SaveFoodiiMealUseCase(
         }
 
         val ingredientDetails = mutableListOf<FoodiiMealIngredient>()
-        var totalCalories = 0
+        var totalCalories = 0.0
 
         for (item in ingredientsRequest) {
             val (ingredientId, amount) = item
             
-            // Ya no pasamos el token aquí, el interceptor lo maneja
             val ingredient = ingredientRepository.findById(id = ingredientId)
                 ?: return Result.failure(Exception("Ingrediente no encontrado"))
 
-            // Mantenemos la vinculación con el usuario
             if (ingredient.createdBy != userId) {
                 return Result.failure(Exception("No puedes usar ingredientes de otros usuarios"))
             }
 
-            val calories = ((ingredient.caloriesPer100g * amount) / 100)
+            val calories = ((ingredient.caloriesPer100g * amount) / 100.0)
 
             ingredientDetails.add(
                 FoodiiMealIngredient(

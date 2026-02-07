@@ -14,7 +14,7 @@ class MealFoodiiRepositoryImpl(
 
     override fun findAll(userId: String): Flow<List<FoodiiMeal>> = flow {
         try {
-            val response = api.getMealsAPI()
+            val response = api.getMealsAPI(userId = userId)
 
             if (response.success == true && response.meals != null) {
                 Log.d("AWS_API", "ÉXITO: Se recibieron ${response.meals.size} platillos para el usuario $userId")
@@ -32,7 +32,7 @@ class MealFoodiiRepositoryImpl(
 
     override fun findByDate(date: String, userId: String): Flow<List<FoodiiMeal>> = flow {
         try {
-            val response = api.getMealsAPI(date = date)
+            val response = api.getMealsAPI(date = date, userId = userId)
             emit(response.meals?.map { it.toDomain() } ?: emptyList())
         } catch (e: Exception) {
             Log.e("AWS_API", "Error al buscar por fecha: ${e.message}")

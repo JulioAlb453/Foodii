@@ -11,6 +11,7 @@ interface FoodiiAPI {
 
     @GET("api/meals")
     suspend fun getMealsAPI(
+        @Query("userID") userId: String,
         @Query("date") date: String? = null
     ): FoodiiMealResponse
 
