@@ -1,26 +1,28 @@
 package com.example.foodii
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.compose.FoodiiTheme
 import com.example.foodii.core.di.AppContainer
-import com.example.foodii.feature.foods.presentation.screen.MealDetailsScreen
-import com.example.foodii.feature.foods.presentation.screen.MealInfoScreen
-import com.example.foodii.feature.planner.di.FoodDetailsModule
-import com.example.foodii.feature.planner.domain.entity.MealDetail
-import com.example.foodii.feature.planner.presentation.screen.PlannerScreen
-import com.example.foodii.feature.planner.presentation.viewmodel.MealDetailsViewModel
-import com.example.foodii.feature.planner.presentation.viewmodel.PlannerViewModel
-import com.example.foodii.feature.planner.presentation.viewmodel.PlannerViewModelFactory
+import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsListScreen
+import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsSummaryScreen
+import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
+import com.example.foodii.feature.auth.domain.usecase.LoginUseCase
+import com.example.foodii.feature.auth.domain.usecase.LogoutUseCase
+import com.example.foodii.feature.auth.domain.usecase.RegisterUseCase
+import com.example.foodii.feature.auth.presentation.AuthViewModel
+import com.example.foodii.feature.auth.presentation.AuthViewModelFactory
+import com.example.foodii.feature.auth.presentation.LoginScreen
+import com.example.foodii.feature.auth.presentation.RegisterScreen
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -29,67 +31,77 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appContainer = AppContainer(this)
-        val foodDetailsModule = FoodDetailsModule(appContainer)
 
         enableEdgeToEdge()
         setContent {
             FoodiiTheme {
                 val navController = rememberNavController()
-                var selectedMealForInfo by remember { mutableStateOf<MealDetail?>(null) }
+                val scope = rememberCoroutineScope()
+                
+                val currentUser by appContainer.authRepository.authState.collectAsState(initial = null)
+
+                // Log Crítico para ver el estado del usuario
+                LaunchedEffect(currentUser) {
+                    Log.e("AWS_MAIN", "Estado del usuario cambiado: ${currentUser?.username ?: "NADIE LOGUEADO"}")
+                }
 
                 NavHost(
                     navController = navController,
-                    startDestination = "details/a"
+                    startDestination = "login"
                 ) {
-                    composable(
-                        route = "details/{letter}",
-                        arguments = listOf(navArgument("letter") { type = NavType.StringType })
-                    ) { backStackEntry ->
-                        val letter = backStackEntry.arguments?.getString("letter") ?: "a"
-                        val factory = foodDetailsModule.provideMealDetailsViewModelFactory(letter)
-
-                        MealDetailsScreen(
-                            factory = factory,
-                            onBackPressed = { navController.popBackStack() },
-                            onMealClick = { meal ->
-                                selectedMealForInfo = meal
-                                navController.navigate("meal_info")
-                            },
-                            onViewPlannerClick = {
-                                navController.navigate("planner")
+                    composable("login") {
+                        val viewModel: AuthViewModel = viewModel(
+                            factory = AuthViewModelFactory(
+                                loginUseCase = LoginUseCase(appContainer.authRepository),
+                                registerUseCase = RegisterUseCase(appContainer.authRepository),
+                                logoutUseCase = LogoutUseCase(appContainer.authRepository)
+                            )
+                        )
+                        
+                        LaunchedEffect(currentUser) {
+                            if (currentUser != null) {
+                                Log.e("AWS_MAIN", "Usuario detectado, navegando a meals_list")
+                                navController.navigate("meals_list") {
+                                    popUpTo("login") { inclusive = true }
+                                }
                             }
+                        }
+
+                        LoginScreen(
+                            viewModel = viewModel,
+                            onLoginSuccess = { },
+                            onNavigateToRegister = { navController.navigate("register") }
                         )
                     }
 
-                    composable("meal_info") {
-                        selectedMealForInfo?.let { meal ->
-                            val factory = foodDetailsModule.provideMealDetailsViewModelFactory("a")
-                            val viewModel: MealDetailsViewModel = viewModel(factory = factory)
-
-                            MealInfoScreen(
-                                meal = meal,
-                                onBackPressed = { navController.popBackStack() },
-                                onScheduleMeal = { millis ->
-                                    viewModel.onPlanMealSelected(meal, millis)
-                                    navController.navigate("planner") {
-                                        popUpTo("details/a")
-                                    }
-                                }
+                    composable("meals_list") {
+                        val user = currentUser
+                        if (user != null) {
+                            Log.e("AWS_MAIN", "Mostrando MealsListScreen para el usuario: ${user.id}")
+                            val viewModel: MealFoodiiViewModel = viewModel(
+                                factory = appContainer.foodiiFeatureModule.provideMealViewModelFactory()
                             )
+                            
+                            MealsListScreen(
+                                viewModel = viewModel,
+                                userId = user.id,
+                                onViewSummaryClick = { navController.navigate("meals_summary") },
+                                onLogoutClick = {
+                                    scope.launch {
+                                        appContainer.authRepository.logout()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                },
+                                onMealClick = { /* Navegar a detalles */ }
+                            )
+                        } else {
+                            Log.e("AWS_MAIN", " MealsListScreen: currentUser es NULL")
                         }
                     }
 
-                    composable("planner") {
-                        val plannerRepository = appContainer.plannerRepository
-                        val viewModel: PlannerViewModel = viewModel(
-                            factory = PlannerViewModelFactory(plannerRepository)
-                        )
-
-                        PlannerScreen(
-                            viewModel = viewModel,
-                            onBackPressed = { navController.popBackStack() }
-                        )
-                    }
+                    // ... resto de composables
                 }
             }
         }
