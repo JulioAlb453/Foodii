@@ -38,9 +38,9 @@ fun MealDetailScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = primaryDark,
-                    titleContentColor = onPrimaryDark,
-                    navigationIconContentColor = onPrimaryDark
+                    containerColor = primaryLight,
+                    titleContentColor = onPrimaryLight,
+                    navigationIconContentColor = onPrimaryLight
                 ),
                 title = { Text("Detalle del Platillo", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
@@ -55,13 +55,13 @@ fun MealDetailScreen(
             if (uiState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = primaryDark
+                    color = primaryLight
                 )
             } else if (meal == null) {
                 Text(
                     text = uiState.error ?: "No se pudo cargar la información",
                     modifier = Modifier.align(Alignment.Center),
-                    color = errorDark
+                    color = errorLight
                 )
             } else {
                 LazyColumn(
@@ -73,7 +73,7 @@ fun MealDetailScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = primaryDark),
+                            colors = CardDefaults.cardColors(containerColor = primaryLight),
                             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
                         ) {
                             Column(modifier = Modifier.padding(20.dp)) {
@@ -81,7 +81,7 @@ fun MealDetailScreen(
                                     text = meal!!.name,
                                     style = TypographyFoodii.headlineMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = primaryLight
+                                    color = onPrimaryLight
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -95,7 +95,7 @@ fun MealDetailScreen(
                                     Text(
                                         text = meal!!.mealTime.name.lowercase().replaceFirstChar { it.uppercase() },
                                         style = MaterialTheme.typography.bodyLarge,
-                                        color = primaryLight
+                                        color = onPrimaryLight
                                     )
                                 }
                             }
@@ -130,7 +130,7 @@ fun MealDetailScreen(
                                     Text(
                                         "Aporte Energético Total",
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = onSurfaceLightMediumContrast
+                                        color = onSurfaceVariantLight
                                     )
                                     Text(
                                         "${meal!!.totalCalories.toInt()} kcal",
@@ -173,7 +173,7 @@ fun MealDetailScreen(
                                     )
                                     Text(
                                         text = "Cantidad: ${ingredient.amount}g",
-                                        style =TypographyFoodii.bodySmall,
+                                        style = TypographyFoodii.bodySmall,
                                         color = outlineLight
                                     )
                                 }
