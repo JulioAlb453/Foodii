@@ -16,6 +16,9 @@ interface PlannedMealDao {
     @Query("SELECT * FROM planned_meals ORDER BY date ASC")
     fun getAllPlannedMeals(): Flow<List<PlannedMealEntity>>
 
+    @Query("SELECT * FROM planned_meals WHERE date >= :start AND date <= :end")
+    suspend fun getPlannedMealsInRange(start: Long, end: Long): List<PlannedMealEntity>
+
     @Delete
     suspend fun deleteMeal(meal: PlannedMealEntity)
 }

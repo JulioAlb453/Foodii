@@ -23,7 +23,6 @@ class MealDetailsViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     init {
-        // Por defecto cargamos con la letra 'a' o podrías recibirlo de un SavedStateHandle
         loadMealDetails("a")
     }
 

@@ -38,4 +38,10 @@ class PlannerRepositoryImpl @Inject constructor(
     }
 
     override fun getPlannedMeals() = plannedMealDao.getAllPlannedMeals()
+
+    override suspend fun getPlannedMealsForDateRange(start: Long, end: Long): List<PlannedMealEntity> {
+        return withContext(Dispatchers.IO) {
+            plannedMealDao.getPlannedMealsInRange(start, end)
+        }
+    }
 }

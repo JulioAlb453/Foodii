@@ -10,4 +10,6 @@ interface PlannerRepository {
     suspend fun getMealsByLetter(letter: String): List<MealDetail>
 
     fun getPlannedMeals(): Flow<List<PlannedMealEntity>>
+
+    suspend fun getPlannedMealsForDateRange(start: Long, end: Long): List<PlannedMealEntity>
 }
