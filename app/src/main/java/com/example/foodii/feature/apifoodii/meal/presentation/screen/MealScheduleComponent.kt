@@ -7,16 +7,30 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.compose.*
+import com.example.foodii.core.hardware.domain.ShakeDetector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealScheduleComponent(
+    shakeDetector: ShakeDetector,
     onDateSelected: (Long) -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
     if (showDatePicker) {
+        DisposableEffect(Unit) {
+            shakeDetector.startListening {
+                datePickerState.selectedDateMillis?.let {
+                    onDateSelected(it)
+                    showDatePicker = false
+                }
+            }
+            onDispose {
+                shakeDetector.stopListening()
+            }
+        }
+
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
