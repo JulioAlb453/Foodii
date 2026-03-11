@@ -1,7 +1,9 @@
 package com.example.foodii.core.di
 
 import android.content.Context
+import com.example.foodii.core.hardware.data.AndroidCameraManager
 import com.example.foodii.core.hardware.data.AndroidShakeDetector
+import com.example.foodii.core.hardware.domain.CameraManager
 import com.example.foodii.core.hardware.domain.ShakeDetector
 import dagger.Module
 import dagger.Provides
@@ -18,5 +20,11 @@ object HardwareModule {
     @Singleton
     fun provideShakeDetector(@ApplicationContext context: Context): ShakeDetector {
         return AndroidShakeDetector(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCameraManager(@ApplicationContext context: Context): CameraManager {
+        return AndroidCameraManager(context)
     }
 }

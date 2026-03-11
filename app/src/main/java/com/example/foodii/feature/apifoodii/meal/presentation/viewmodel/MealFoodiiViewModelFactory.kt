@@ -3,6 +3,7 @@ package com.example.foodii.feature.apifoodii.meal.presentation.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.foodii.core.hardware.data.AndroidShakeDetector
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRangeUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
@@ -30,7 +31,8 @@ class MealFoodiiViewModelFactory(
                 getFoodiiMealByIdUseCase = getFoodiiMealByIdUseCase,
                 planMealUseCase = planMealUseCase,
                 getPlannedMealsUseCase = getPlannedMealsUseCase,
-                context = context
+                context = context,
+                shakeDetector = AndroidShakeDetector(context)
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

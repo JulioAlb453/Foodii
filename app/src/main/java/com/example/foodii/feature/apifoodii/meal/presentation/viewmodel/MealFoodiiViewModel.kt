@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.foodii.core.hardware.domain.ShakeDetector
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
@@ -25,7 +26,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 class MealFoodiiViewModel(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
@@ -34,7 +34,8 @@ class MealFoodiiViewModel(
     private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase,
     private val planMealUseCase: PlanMealUseCase,
     private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
-    private val context: Context
+    private val context: Context,
+    val shakeDetector: ShakeDetector
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MealFoodiiDetailsUiState())
@@ -49,9 +50,32 @@ class MealFoodiiViewModel(
     private val _selectedMeal = MutableStateFlow<FoodiiMeal?>(null)
     val selectedMeal = _selectedMeal.asStateFlow()
 
-    // Nueva propiedad para las comidas agendadas (del planner local)
     private val _plannedMeals = MutableStateFlow<List<PlannedMealEntity>>(emptyList())
     val plannedMeals = _plannedMeals.asStateFlow()
+
+    private val _currentStep = MutableStateFlow(1)
+    val currentStep = _currentStep.asStateFlow()
+
+    fun startShakeDetection() {
+        shakeDetector.startListening {
+            if (_currentStep.value < 3) {
+                _currentStep.value += 1
+                Log.d("Shake", "Cambiando al paso ${_currentStep.value}")
+            } else {
+                _currentStep.value = 1
+                Log.d("Shake", "Reiniciando pasos")
+            }
+        }
+    }
+
+    fun stopShakeDetection() {
+        shakeDetector.stopListening()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        shakeDetector.stopListening()
+    }
 
     fun loadAllMeals(userId: String) {
         _uiState.update { it.copy(isLoading = true, error = null) }
@@ -89,7 +113,6 @@ class MealFoodiiViewModel(
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
-                // Combinamos las comidas de la API con las agendadas localmente
                 viewModelScope.launch {
                     getPlannedMealsUseCase().collect { localPlanned ->
                         _plannedMeals.value = localPlanned
@@ -111,9 +134,8 @@ class MealFoodiiViewModel(
         val apiSummaries = _summaries.value
         val localPlanned = _plannedMeals.value
 
-        // Agrupar las comidas agendadas locales por fecha
         val localGrouped = localPlanned.groupBy { 
-            Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+            Instant.ofEpochMilli(it.date).atZone(ZoneId.of("UTC")).toLocalDate().toString()
         }
 
         val combined = apiSummaries.map { summary ->
@@ -121,8 +143,8 @@ class MealFoodiiViewModel(
                 FoodiiMeal(
                     id = it.mealId,
                     name = it.name,
-                    date = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate(),
-                    mealTime = FoodiiMealTime.SNACK, // Por defecto
+                    date = Instant.ofEpochMilli(it.date).atZone(ZoneId.of("UTC")).toLocalDate(),
+                    mealTime = FoodiiMealTime.SNACK,
                     totalCalories = 0.0,
                     createdBy = userId,
                     ingredients = emptyList()
@@ -132,7 +154,6 @@ class MealFoodiiViewModel(
             summary.copy(meals = summary.meals + extraMeals)
         }
         
-        // También añadir fechas que están en local pero no en la API
         val apiDates = apiSummaries.map { it.date }.toSet()
         val extraSummaries = localGrouped.filter { it.key !in apiDates }.map { (date, meals) ->
             DailySummary(
@@ -142,7 +163,7 @@ class MealFoodiiViewModel(
                     FoodiiMeal(
                         id = it.mealId,
                         name = it.name,
-                        date = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate(),
+                        date = Instant.ofEpochMilli(it.date).atZone(ZoneId.of("UTC")).toLocalDate(),
                         mealTime = FoodiiMealTime.SNACK,
                         totalCalories = 0.0,
                         createdBy = userId,

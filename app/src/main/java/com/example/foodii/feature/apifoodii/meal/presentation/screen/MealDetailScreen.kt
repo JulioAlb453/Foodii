@@ -57,6 +57,7 @@ fun MealDetailScreen(
         floatingActionButton = {
             if (meal != null) {
                 MealScheduleComponent(
+                    shakeDetector = viewModel.shakeDetector,
                     onDateSelected = { dateMillis ->
                         viewModel.scheduleMealReminder(meal!!, dateMillis)
                         scope.launch {
