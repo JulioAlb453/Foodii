@@ -23,7 +23,7 @@ fun MealsSummaryScreen(
     userId: String,
     onBackPressed: () -> Unit
 ) {
-    FoodiiTheme(darkTheme = true, dynamicColor = false) {
+    FoodiiTheme(darkTheme = false, dynamicColor = false) {
         val uiState by viewModel.uiState.collectAsState()
         val summaries by viewModel.summaries.collectAsState()
 
