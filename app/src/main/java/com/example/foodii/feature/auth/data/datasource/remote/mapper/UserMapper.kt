@@ -6,7 +6,6 @@ import com.example.foodii.feature.auth.domain.entity.User
 
 
 fun AuthResponse?.toDomain(): User {
-    // Si la respuesta es nula o no fue exitosa
     if (this?.data == null) {
         return User(id = "", username = "", token = null)
     }

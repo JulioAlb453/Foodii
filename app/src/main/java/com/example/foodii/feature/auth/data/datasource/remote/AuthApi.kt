@@ -8,7 +8,7 @@ interface AuthApi {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
-    @POST("api/auth/register")
+    @POST("/api/auth/register")
     suspend fun register(@Body request: LoginRequest): AuthResponse
 }
 
