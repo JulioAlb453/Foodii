@@ -146,7 +146,10 @@ class MainActivity : ComponentActivity() {
                             MealsSummaryScreen(
                                 viewModel = viewModel,
                                 userId = user.id,
-                                onBackPressed = { navController.navigateUp() }
+                                onBackPressed = { navController.popBackStack() },
+                                onNavigateToDetail = { mealId ->
+                                    navController.navigate("meal_detail/$mealId")
+                                }
                             )
                         }
                     }
