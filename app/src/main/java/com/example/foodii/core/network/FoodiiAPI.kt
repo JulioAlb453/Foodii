@@ -28,13 +28,16 @@ interface FoodiiAPI {
     ): SingleMealResponse
 
     @GET("api/ingredients")
-    suspend fun getAllIngredientsAPI(
-        @Query("userId") userId: String
-    ): IngredientResponse
+    suspend fun getAllIngredientsAPI(): IngredientResponse
 
     @GET("api/ingredients/{id}")
     suspend fun getIngredientByIdAPI(
         @Path("id") id: String
+    ): SingleIngredientResponse
+
+    @POST("api/ingredients")
+    suspend fun createIngredientAPI(
+        @Body ingredient: IngredientDto
     ): SingleIngredientResponse
 
     @PUT("api/ingredients/{id}")

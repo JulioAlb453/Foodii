@@ -15,7 +15,7 @@ data class SingleIngredientResponse(
 data class IngredientDto(
     @SerializedName("id") val id: String?,
     @SerializedName("name") val name: String?,
-    @SerializedName("calories_per_100g") val caloriesPer100g: Double?,
-    @SerializedName("created_by") val createdBy: String?,
-    @SerializedName("created_at") val createdAt: String?
+    @SerializedName("caloriesPer100g") val caloriesPer100g: Double?,
+    @SerializedName("createdBy") val createdBy: String?,
+    @SerializedName("createdAt") val createdAt: String?
 )
