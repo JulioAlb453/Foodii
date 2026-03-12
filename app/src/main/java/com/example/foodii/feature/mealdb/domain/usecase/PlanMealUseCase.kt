@@ -7,7 +7,7 @@ import javax.inject.Inject
 class PlanMealUseCase @Inject constructor(
     private val plannerRepository: PlannerRepository
 ) {
-    suspend operator fun invoke(meal: MealDetail, date: Long) {
-        plannerRepository.planMeal(meal, date)
+    suspend operator fun invoke(meal: MealDetail, date: Long, userId: String) {
+        plannerRepository.planMeal(meal, date, userId)
     }
 }

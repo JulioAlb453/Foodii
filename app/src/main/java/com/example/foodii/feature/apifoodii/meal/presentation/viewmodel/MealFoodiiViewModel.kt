@@ -1,8 +1,15 @@
 package com.example.foodii.feature.apifoodii.meal.presentation.viewmodel
 
+import android.content.Context
 import android.util.Log
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.example.foodii.core.hardware.domain.ShakeDetector
+import com.example.foodii.core.utils.NotificationHelper
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
@@ -11,17 +18,30 @@ import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRa
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.SaveFoodiiMealUseCase
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealFoodiiDetailsUiState
+import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
+import com.example.foodii.feature.mealdb.domain.entity.MealDetail
+import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
+import com.example.foodii.feature.mealdb.domain.usecase.PlanMealUseCase
+import com.example.foodii.feature.mealdb.presentation.widget.MealReminderWidget
+import com.example.foodii.feature.mealdb.data.worker.SingleMealNotificationWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.util.concurrent.TimeUnit
 
 class MealFoodiiViewModel(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
     private val getMealsByDateRangeUseCase: GetMealsByDateRangeUseCase,
     private val getMealsUseCase: GetMealsUseCase,
-    private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase
+    private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase,
+    private val planMealUseCase: PlanMealUseCase,
+    private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
+    private val context: Context,
+    val shakeDetector: ShakeDetector
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MealFoodiiDetailsUiState())
@@ -36,12 +56,40 @@ class MealFoodiiViewModel(
     private val _selectedMeal = MutableStateFlow<FoodiiMeal?>(null)
     val selectedMeal = _selectedMeal.asStateFlow()
 
+    private val _plannedMeals = MutableStateFlow<List<PlannedMealEntity>>(emptyList())
+    val plannedMeals = _plannedMeals.asStateFlow()
+
+    private val _currentStep = MutableStateFlow(1)
+    val currentStep = _currentStep.asStateFlow()
+
+    fun startShakeDetection() {
+        shakeDetector.startListening {
+            if (_currentStep.value < 3) {
+                _currentStep.value += 1
+                Log.d("Shake", "Cambiando al paso ${_currentStep.value}")
+            } else {
+                _currentStep.value = 1
+                Log.d("Shake", "Reiniciando pasos")
+            }
+        }
+    }
+
+    fun stopShakeDetection() {
+        shakeDetector.stopListening()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        shakeDetector.stopListening()
+    }
+
     fun loadAllMeals(userId: String) {
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
                 getMealsUseCase(userId).collect { meals ->
                     _allMeals.value = meals
+                    updateCombinedSummaries(userId, "", "")
                     _uiState.update { it.copy(isLoading = false) }
                 }
             } catch (e: Exception) {
@@ -72,14 +120,88 @@ class MealFoodiiViewModel(
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
-                getMealsByDateRangeUseCase(userId, startDate, endDate).collect { data ->
-                    _summaries.value = data
-                    _uiState.update { it.copy(isLoading = false) }
+                launch {
+                    getMealsUseCase(userId).collect { meals ->
+                        _allMeals.value = meals
+                        updateCombinedSummaries(userId, startDate, endDate)
+                    }
+                }
+
+                launch {
+                    getPlannedMealsUseCase(userId).collect { localPlanned ->
+                        _plannedMeals.value = localPlanned
+                        updateCombinedSummaries(userId, startDate, endDate)
+                    }
+                }
+                
+                getMealsByDateRangeUseCase(userId, startDate, endDate).collect { apiSummaries ->
+                    _summaries.value = apiSummaries
+                    updateCombinedSummaries(userId, startDate, endDate)
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
             }
         }
+    }
+
+    private fun updateCombinedSummaries(userId: String, startDate: String, endDate: String) {
+        val apiSummaries = _summaries.value
+        val localPlanned = _plannedMeals.value
+        val allCreatedMeals = _allMeals.value
+
+        val localGrouped = localPlanned.groupBy { 
+            val date = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
+            date.toString()
+        }
+
+        val combined = apiSummaries.map { summary ->
+            val summaryDate = summary.date.substringBefore("T")
+            val existingMealIds = summary.meals.map { it.id }.toSet()
+            
+            val extraMeals = localGrouped[summaryDate]?.filter { it.mealId !in existingMealIds }?.map { planned ->
+                val matchingMeal = allCreatedMeals.find { it.id == planned.mealId }
+                FoodiiMeal(
+                    id = planned.mealId,
+                    name = planned.name,
+                    date = Instant.ofEpochMilli(planned.date).atZone(ZoneId.systemDefault()).toLocalDate(),
+                    mealTime = FoodiiMealTime.SNACK,
+                    totalCalories = matchingMeal?.totalCalories ?: 0.0,
+                    createdBy = userId,
+                    ingredients = emptyList()
+                )
+            } ?: emptyList()
+            
+            val allDayMeals = (summary.meals + extraMeals).distinctBy { it.id }
+            summary.copy(
+                date = summaryDate, 
+                meals = allDayMeals,
+                totalCalories = allDayMeals.sumOf { it.totalCalories }
+            )
+        }
+        
+        val apiDates = combined.map { it.date }.toSet()
+        val extraSummaries = localGrouped.filter { it.key !in apiDates }.map { (date, meals) ->
+            val mappedMeals = meals.distinctBy { it.mealId }.map { planned ->
+                val matchingMeal = allCreatedMeals.find { it.id == planned.mealId }
+                FoodiiMeal(
+                    id = planned.mealId,
+                    name = planned.name,
+                    date = Instant.ofEpochMilli(planned.date).atZone(ZoneId.systemDefault()).toLocalDate(),
+                    mealTime = FoodiiMealTime.SNACK,
+                    totalCalories = matchingMeal?.totalCalories ?: 0.0,
+                    createdBy = userId,
+                    ingredients = emptyList()
+                )
+            }
+            DailySummary(
+                date = date,
+                totalCalories = mappedMeals.sumOf { it.totalCalories },
+                meals = mappedMeals
+            )
+        }
+
+        _summaries.value = (combined + extraSummaries).sortedBy { it.date }
+        _uiState.update { it.copy(isLoading = false) }
     }
 
     fun saveMeal(
@@ -105,6 +227,69 @@ class MealFoodiiViewModel(
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+            }
+        }
+    }
+
+    fun scheduleMealReminder(meal: FoodiiMeal, dateMillis: Long) {
+        viewModelScope.launch {
+            try {
+                // 1. Guardar en la base de datos agendada
+                val mealDetail = MealDetail(
+                    id = meal.id,
+                    name = meal.name,
+                    instructions = meal.instructions.ifEmpty { "Toca para ver la receta" },
+                    imageUrl = ""
+                )
+                planMealUseCase(mealDetail, dateMillis, meal.createdBy)
+                
+                // 2. Programar la Alerta local (Notificación)
+                val currentTime = System.currentTimeMillis()
+                val delay = dateMillis - currentTime
+                
+                if (delay > 0) {
+                    val workRequest = OneTimeWorkRequestBuilder<SingleMealNotificationWorker>()
+                        .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                        .setInputData(workDataOf(
+                            "meal_name" to meal.name,
+                            "meal_id" to meal.id
+                        ))
+                        .addTag("alert_${meal.id}")
+                        .build()
+
+                    WorkManager.getInstance(context).enqueue(workRequest)
+                    Log.d("MealFoodiiViewModel", "Alerta programada para ${meal.name} en $delay ms")
+                }
+
+                MealReminderWidget().updateAll(context)
+            } catch (e: Exception) {
+                Log.e("MealFoodiiViewModel", "Error al agendar recordatorio", e)
+            }
+        }
+    }
+
+    fun sendTestNotification(userId: String) {
+        viewModelScope.launch {
+            try {
+                val nextMeal = getPlannedMealsUseCase.getNextPlannedMeal(userId)
+                
+                if (nextMeal != null) {
+                    NotificationHelper.showMealAlert(
+                        context = context,
+                        title = "Próxima comida agendada",
+                        message = "Tienes pendiente: ${nextMeal.name}",
+                        mealId = nextMeal.mealId
+                    )
+                } else {
+                    NotificationHelper.showMealAlert(
+                        context = context,
+                        title = "Sin agenda próxima",
+                        message = "No tienes comidas programadas para los próximos días.",
+                        mealId = "no_meals"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("MealFoodiiViewModel", "Error al enviar notificación de prueba", e)
             }
         }
     }

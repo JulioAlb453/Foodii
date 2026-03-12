@@ -77,6 +77,8 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.ext.compiler)
     
     // Network (Retrofit & OkHttp)
     implementation(libs.retrofit)
@@ -97,6 +99,13 @@ dependencies {
     // Serialization & Utils
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.javax.inject)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // Glance (Widgets)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
 
     // Testing
     testImplementation(libs.junit)

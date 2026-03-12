@@ -21,9 +21,10 @@ import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFood
 fun MealsSummaryScreen(
     viewModel: MealFoodiiViewModel,
     userId: String,
-    onBackPressed: () -> Unit
+    onBackPressed: () -> Unit,
+    onNavigateToDetail: (String) -> Unit
 ) {
-    FoodiiTheme(darkTheme = true, dynamicColor = false) {
+    FoodiiTheme(darkTheme = false, dynamicColor = false) {
         val uiState by viewModel.uiState.collectAsState()
         val summaries by viewModel.summaries.collectAsState()
 
@@ -81,7 +82,9 @@ fun MealsSummaryScreen(
                         items(summaries) { summary ->
                             DailySummaryItem(
                                 summary = summary,
-                                onMealClick = { /* Navegar al detalle si es necesario */ }
+                                onMealClick = { meal ->
+                                    onNavigateToDetail(meal.id)
+                                }
                             )
                         }
                     }

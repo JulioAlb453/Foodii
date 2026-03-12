@@ -4,13 +4,25 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.foodii.feature.apifoodii.ingredient.data.local.dao.IngredientRoomDao
+import com.example.foodii.feature.apifoodii.ingredient.data.local.entity.IngredientRoomEntity
+import com.example.foodii.feature.apifoodii.meal.data.local.dao.MealRoomDao
+import com.example.foodii.feature.apifoodii.meal.data.local.entity.MealRoomEntity
 import com.example.foodii.feature.mealdb.data.local.dao.PlannedMealDao
 import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
 
-@Database(entities = [PlannedMealEntity::class], version = 2, exportSchema = false) // Incrementado a versión 2
+@Database(entities = [
+    PlannedMealEntity::class,
+    MealRoomEntity::class,
+    IngredientRoomEntity::class],
+    version = 6, // Incrementado a 6
+    exportSchema = false)
+
 abstract class FoodiiDatabase : RoomDatabase() {
 
     abstract fun plannedMealDao(): PlannedMealDao
+    abstract fun mealDao(): MealRoomDao
+    abstract fun ingredientDao(): IngredientRoomDao
 
     companion object {
         @Volatile
@@ -23,7 +35,7 @@ abstract class FoodiiDatabase : RoomDatabase() {
                     FoodiiDatabase::class.java,
                     "foodii_database"
                 )
-                    .fallbackToDestructiveMigration() // Esto borrará los datos antiguos y creará la nueva tabla
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { Instance = it }
             }

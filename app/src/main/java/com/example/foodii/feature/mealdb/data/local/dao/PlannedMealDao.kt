@@ -13,8 +13,11 @@ interface PlannedMealDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlannedMeal(meal: PlannedMealEntity)
 
-    @Query("SELECT * FROM planned_meals ORDER BY date ASC")
-    fun getAllPlannedMeals(): Flow<List<PlannedMealEntity>>
+    @Query("SELECT * FROM planned_meals WHERE userId = :userId ORDER BY date ASC")
+    fun getAllPlannedMeals(userId: String): Flow<List<PlannedMealEntity>>
+
+    @Query("SELECT * FROM planned_meals WHERE userId = :userId AND date >= :start AND date <= :end")
+    suspend fun getPlannedMealsInRange(userId: String, start: Long, end: Long): List<PlannedMealEntity>
 
     @Delete
     suspend fun deleteMeal(meal: PlannedMealEntity)

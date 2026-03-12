@@ -1,11 +1,11 @@
 package com.example.foodii.feature.apifoodii.ingredient.presentation.screen
 
-import android.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -14,13 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.compose.FoodiiTheme
-import com.example.compose.backgroundDark
-import com.example.compose.backgroundLight
-import com.example.compose.onPrimaryDark
-import com.example.compose.onPrimaryLight
-import com.example.compose.primaryDark
-import com.example.compose.primaryLight
+import com.example.compose.*
+import com.example.foodii.feature.apifoodii.ingredient.presentation.components.CreateIngredientDialog
 import com.example.foodii.feature.apifoodii.ingredient.presentation.components.IngredientItemCard
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
 
@@ -33,8 +28,8 @@ fun IngredientsScreen(
     FoodiiTheme(darkTheme = true, dynamicColor = false) {
         val uiState by viewModel.uiState.collectAsState()
         var searchQuery by remember { mutableStateOf("") }
+        var showCreateDialog by remember { mutableStateOf(false) }
 
-        // Filtrado local para una respuesta instantánea
         val filteredIngredients = remember(searchQuery, uiState.ingredients) {
             if (searchQuery.isBlank()) {
                 uiState.ingredients
@@ -45,8 +40,27 @@ fun IngredientsScreen(
             }
         }
 
+        if (showCreateDialog) {
+            CreateIngredientDialog(
+                onDismiss = { showCreateDialog = false },
+                onConfirm = { name, calories ->
+                    viewModel.createIngredient(name, calories)
+                    showCreateDialog = false
+                }
+            )
+        }
+
         Scaffold(
             containerColor = backgroundLight,
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { showCreateDialog = true },
+                    containerColor = primaryLight,
+                    contentColor = onPrimaryLight
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Añadir Ingrediente")
+                }
+            },
             topBar = {
                 Column {
                     CenterAlignedTopAppBar(
@@ -75,8 +89,7 @@ fun IngredientsScreen(
                                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                             placeholder = {
                                 Text("Buscar ingrediente...", color = primaryLight)
-
-                                          },
+                            },
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary) },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = onPrimaryDark,
@@ -119,6 +132,9 @@ fun IngredientsScreen(
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall
                             )
+                            Button(onClick = { viewModel.loadIngredients() }) {
+                                Text("Reintentar")
+                            }
                         }
                     }
                     filteredIngredients.isEmpty() -> {

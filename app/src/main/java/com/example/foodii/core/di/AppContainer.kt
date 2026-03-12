@@ -14,7 +14,12 @@ import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import com.example.foodii.feature.auth.data.datasource.remote.AuthApi
 import com.example.foodii.feature.auth.data.repositories.AuthRepositoryImpl
 import com.example.foodii.feature.auth.domain.repository.AuthRepository
-import com.example.foodii.feature.apifoodii.meal.di.FoodiiFeatureModule
+import com.example.foodii.feature.apifoodii.meal.di.MealFoodiiModule
+import com.example.foodii.feature.apifoodii.ingredient.di.IngredientFoodiiModule
+import com.example.foodii.feature.mealdb.data.datasource.api.MealDbApi
+import com.example.foodii.feature.mealdb.data.datasource.repositories.PlannerRepositoryImpl
+import com.example.foodii.feature.mealdb.data.local.database.FoodiiDatabase
+import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -43,6 +48,11 @@ class AppContainer(context: Context) {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
+    private val mealDbRetrofit = Retrofit.Builder()
+        .baseUrl("https://www.themealdb.com/api/json/v1/1/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
     val foodiiApi: FoodiiAPI by lazy {
         foodiiRetrofit.create(FoodiiAPI::class.java)
     }
@@ -51,21 +61,41 @@ class AppContainer(context: Context) {
         foodiiRetrofit.create(AuthApi::class.java)
     }
 
+    private val mealDbApi: MealDbApi by lazy {
+        mealDbRetrofit.create(MealDbApi::class.java)
+    }
+
+    private val foodiiDatabase: FoodiiDatabase by lazy {
+        FoodiiDatabase.getDatabase(context)
+    }
+
     val foodiiRepository: MealFoodiiRepository by lazy {
-        MealFoodiiRepositoryImpl(foodiiApi)
+        MealFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.mealDao())
     }
 
     val ingredientRepository: IngredientRepository by lazy {
-        IngredientFoodiiRepositoryImpl(foodiiApi)
+        IngredientFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.ingredientDao())
     }
 
     val authRepository: AuthRepository by lazy {
         AuthRepositoryImpl(authApi, authLocalDataSource)
     }
 
-    val foodiiFeatureModule: FoodiiFeatureModule by lazy {
-        FoodiiFeatureModule(
+    val plannerRepository: PlannerRepository by lazy {
+        PlannerRepositoryImpl(mealDbApi, foodiiDatabase.plannedMealDao())
+    }
+
+    val mealModule: MealFoodiiModule by lazy {
+        MealFoodiiModule(
             mealRepository = foodiiRepository,
+            ingredientRepository = ingredientRepository,
+            plannerRepository = plannerRepository,
+            context = context
+        )
+    }
+
+    val ingredientModule: IngredientFoodiiModule by lazy {
+        IngredientFoodiiModule(
             ingredientRepository = ingredientRepository,
             authRepository = authRepository
         )

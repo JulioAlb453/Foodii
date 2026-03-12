@@ -1,12 +1,11 @@
 package com.example.foodii.core.network
 
+import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.model.IngredientDto
 import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.model.IngredientResponse
 import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.model.SingleIngredientResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.FoodiiMealResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.SingleMealResponse
-import retrofit2.http.GET
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.*
 
 interface FoodiiAPI {
 
@@ -35,6 +34,17 @@ interface FoodiiAPI {
 
     @GET("api/ingredients/{id}")
     suspend fun getIngredientByIdAPI(
+        @Path("id") id: String
+    ): SingleIngredientResponse
+
+    @PUT("api/ingredients/{id}")
+    suspend fun updateIngredientAPI(
+        @Path("id") id: String,
+        @Body ingredient: IngredientDto
+    ): SingleIngredientResponse
+
+    @DELETE("api/ingredients/{id}")
+    suspend fun deleteIngredientAPI(
         @Path("id") id: String
     ): SingleIngredientResponse
 }

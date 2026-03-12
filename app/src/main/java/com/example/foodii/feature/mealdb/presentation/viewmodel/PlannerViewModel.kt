@@ -2,21 +2,33 @@ package com.example.foodii.feature.mealdb.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
 import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
 import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
 class PlannerViewModel @Inject constructor(
-    private val getPlannedMealsUseCase: GetPlannedMealsUseCase
+    private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
+    private val authLocalDataSource: AuthLocalDataSource
 ) : ViewModel() {
 
-    val plannedMeals: StateFlow<List<PlannedMealEntity>> = getPlannedMealsUseCase()
+    val plannedMeals: StateFlow<List<PlannedMealEntity>> = authLocalDataSource.getUser()
+        .flatMapLatest { user ->
+            if (user != null) {
+                getPlannedMealsUseCase(user.id)
+            } else {
+                flowOf(emptyList())
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

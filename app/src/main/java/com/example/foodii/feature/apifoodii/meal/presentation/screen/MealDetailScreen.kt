@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.compose.*
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
 import com.example.ui.theme.TypographyFoodii
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +29,8 @@ fun MealDetailScreen(
 ) {
     val meal by viewModel.selectedMeal.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(mealId) {
         viewModel.loadMealDetail(mealId, userId)
@@ -35,6 +38,7 @@ fun MealDetailScreen(
 
     Scaffold(
         containerColor = backgroundLight,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -49,6 +53,19 @@ fun MealDetailScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (meal != null) {
+                MealScheduleComponent(
+                    shakeDetector = viewModel.shakeDetector,
+                    onDateSelected = { dateMillis ->
+                        viewModel.scheduleMealReminder(meal!!, dateMillis)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Comida agendada correctamente")
+                        }
+                    }
+                )
+            }
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -185,6 +202,10 @@ fun MealDetailScreen(
                                 )
                             }
                         }
+                    }
+                    
+                    item {
+                        Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
             }
