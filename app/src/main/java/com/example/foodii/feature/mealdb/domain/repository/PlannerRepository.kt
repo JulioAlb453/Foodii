@@ -5,11 +5,11 @@ import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
 import kotlinx.coroutines.flow.Flow
 
 interface PlannerRepository {
-    suspend fun planMeal(meal: MealDetail, date: Long)
+    suspend fun planMeal(meal: MealDetail, date: Long, userId: String)
 
     suspend fun getMealsByLetter(letter: String): List<MealDetail>
 
-    fun getPlannedMeals(): Flow<List<PlannedMealEntity>>
+    fun getPlannedMeals(userId: String): Flow<List<PlannedMealEntity>>
 
-    suspend fun getPlannedMealsForDateRange(start: Long, end: Long): List<PlannedMealEntity>
+    suspend fun getPlannedMealsForDateRange(userId: String, start: Long, end: Long): List<PlannedMealEntity>
 }

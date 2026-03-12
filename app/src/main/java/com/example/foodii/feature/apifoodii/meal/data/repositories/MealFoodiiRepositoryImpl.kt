@@ -12,30 +12,51 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import javax.inject.Inject
 
-class MealFoodiiRepositoryImpl(
+class MealFoodiiRepositoryImpl @Inject constructor(
     private val api: FoodiiAPI,
     private val mealDao: MealRoomDao
 ) : MealFoodiiRepository {
 
     override fun findAll(userId: String): Flow<List<FoodiiMeal>> = flow {
-        // Emitir primero lo que hay en caché local
-        val localFlow = mealDao.getAllMeals(userId).map { list -> list.map { it.toDomain() } }
+        Log.d("DIAGNOSTICO", "Buscando platillos para userId: $userId")
         
+        // 1. Emitir lo que ya está en Room
         try {
-            // Intentar actualizar desde la red
+            val localMeals = mealDao.getAllMeals(userId).first()
+            emit(localMeals.map { it.toDomain() })
+        } catch (e: Exception) {
+            Log.e("AWS_API", "Error al leer local: ${e.message}")
+        }
+
+        // 2. Sincronizar y CORREGIR el userId si viene vacío del servidor
+        try {
             val response = api.getMealsAPI(userId = userId)
             if (response.success == true && response.meals != null) {
-                val remoteMeals = response.meals.map { it.toDomainFromRemote() }
-                // Guardar en Room para persistencia
-                mealDao.insertMeals(remoteMeals.map { it.toRoomEntity() })
+                val roomEntities = response.meals.map { dto ->
+                    var domain = dto.toDomainFromRemote()
+                    
+                    // Si el servidor no mandó el createdBy, le asignamos el que estamos usando
+                    if (domain.createdBy.isEmpty()) {
+                        domain = domain.copy(createdBy = userId)
+                    }
+                    
+                    domain.toRoomEntity()
+                }
+                
+                Log.d("DIAGNOSTICO", "Insertando ${roomEntities.size} platillos con userId corregido")
+                mealDao.insertMeals(roomEntities)
             }
         } catch (e: Exception) {
             Log.e("AWS_API", "Error al sincronizar con red: ${e.localizedMessage}")
         }
         
-        // Seguir emitiendo los cambios de la base de datos local (fuente de verdad)
-        emitAll(localFlow)
+        // 3. Emitir flujo constante
+        emitAll(mealDao.getAllMeals(userId).map { list -> 
+            list.map { it.toDomain() } 
+        })
     }
 
     override fun findByDate(date: String, userId: String): Flow<List<FoodiiMeal>> = 
@@ -60,9 +81,13 @@ class MealFoodiiRepositoryImpl(
             val response = api.getMealById(id = id)
             val meal = response.meal?.toDomainFromRemote()
             if (meal != null) {
-                mealDao.insertMeal(meal.toRoomEntity())
+                // También corregimos aquí por si acaso
+                val mealToSave = if (meal.createdBy.isEmpty()) meal.copy(createdBy = userId) else meal
+                mealDao.insertMeal(mealToSave.toRoomEntity())
+                mealToSave
+            } else {
+                null
             }
-            meal
         } catch (e: Exception) {
             Log.e("AWS_API", "Error al obtener comida por ID: ${e.message}")
             null

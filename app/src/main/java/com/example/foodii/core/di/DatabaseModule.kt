@@ -23,16 +23,19 @@ object DatabaseModule {
     }
 
     @Provides
+    @Singleton
     fun providePlannedMealDao(database: FoodiiDatabase): PlannedMealDao {
         return database.plannedMealDao()
     }
 
     @Provides
+    @Singleton
     fun provideMealRoomDao(database: FoodiiDatabase): MealRoomDao {
         return database.mealDao()
     }
 
     @Provides
+    @Singleton
     fun provideIngredientRoomDao(database: FoodiiDatabase): IngredientRoomDao {
         return database.ingredientDao()
     }

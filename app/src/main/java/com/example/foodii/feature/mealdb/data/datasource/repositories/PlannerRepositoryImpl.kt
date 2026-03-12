@@ -15,14 +15,15 @@ class PlannerRepositoryImpl @Inject constructor(
     private val plannedMealDao: PlannedMealDao
 ) : PlannerRepository {
 
-    override suspend fun planMeal(meal: MealDetail, date: Long) {
+    override suspend fun planMeal(meal: MealDetail, date: Long, userId: String) {
         withContext(Dispatchers.IO) {
             val entity = PlannedMealEntity(
                 mealId = meal.id,
                 name = meal.name,
                 imageUrl = meal.imageUrl,
                 instructions = meal.instructions,
-                date = date
+                date = date,
+                userId = userId
             )
             plannedMealDao.insertPlannedMeal(entity)
         }
@@ -37,11 +38,11 @@ class PlannerRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getPlannedMeals() = plannedMealDao.getAllPlannedMeals()
+    override fun getPlannedMeals(userId: String) = plannedMealDao.getAllPlannedMeals(userId)
 
-    override suspend fun getPlannedMealsForDateRange(start: Long, end: Long): List<PlannedMealEntity> {
+    override suspend fun getPlannedMealsForDateRange(userId: String, start: Long, end: Long): List<PlannedMealEntity> {
         return withContext(Dispatchers.IO) {
-            plannedMealDao.getPlannedMealsInRange(start, end)
+            plannedMealDao.getPlannedMealsInRange(userId, start, end)
         }
     }
 }

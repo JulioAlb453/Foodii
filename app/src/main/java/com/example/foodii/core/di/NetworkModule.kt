@@ -6,6 +6,7 @@ import com.example.foodii.core.network.AuthInterceptor
 import com.example.foodii.core.network.FoodiiAPI
 import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSourceImpl
+import com.example.foodii.feature.auth.data.datasource.remote.AuthApi
 import com.example.foodii.feature.mealdb.data.datasource.api.MealDbApi
 import dagger.Module
 import dagger.Provides
@@ -16,6 +17,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 @Module
@@ -44,7 +46,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(
+    @AuthClient
+    fun provideAuthOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor
     ): OkHttpClient {
@@ -56,8 +59,30 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @DefaultClient
+    fun provideDefaultOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .build()
+    }
+
+    @Provides
+    @Singleton
     @FoodiiRetrofit
-    fun provideFoodiiRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideFoodiiRetrofit(@AuthClient okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.FOODII_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @AuthRetrofit
+    fun provideAuthRetrofit(@DefaultClient okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.FOODII_BASE_URL)
             .client(okHttpClient)
@@ -83,15 +108,33 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideAuthApi(@AuthRetrofit retrofit: Retrofit): AuthApi {
+        return retrofit.create(AuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
     fun provideMealDbApi(@MealDbRetrofit retrofit: Retrofit): MealDbApi {
         return retrofit.create(MealDbApi::class.java)
     }
 }
 
-@javax.inject.Qualifier
+@Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class FoodiiRetrofit
 
-@javax.inject.Qualifier
+@Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class MealDbRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AuthClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AuthRetrofit

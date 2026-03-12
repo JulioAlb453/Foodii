@@ -20,6 +20,7 @@ import com.example.compose.primaryLight
 import com.example.compose.surfaceVariantLight
 import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
 import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
+import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -30,8 +31,8 @@ import androidx.glance.ImageProvider
 import androidx.glance.color.ColorProvider
 import androidx.glance.text.TextStyle
 import com.example.compose.primaryDark
-
 import com.example.ui.theme.TypographyFoodii
+import kotlinx.coroutines.flow.firstOrNull
 
 
 class MealReminderWidget : GlanceAppWidget() {
@@ -40,31 +41,27 @@ class MealReminderWidget : GlanceAppWidget() {
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
         fun plannerRepository(): PlannerRepository
+        fun authLocalDataSource(): AuthLocalDataSource
     }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appContext = context.applicationContext
         val entryPoint = EntryPointAccessors.fromApplication(appContext, WidgetEntryPoint::class.java)
         val repository = entryPoint.plannerRepository()
+        val authDataSource = entryPoint.authLocalDataSource()
+
+        val user = authDataSource.getUser().firstOrNull()
+        val userId = user?.id ?: ""
 
         val now = System.currentTimeMillis()
 
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+        val plannedMeals = if (userId.isNotEmpty()) {
+            repository.getPlannedMealsForDateRange(userId,
+                now, now + (48 * 60 * 60 * 1000))
+        } else {
+            emptyList()
         }
-        val startOfTomorrow = calendar.timeInMillis
-
-        calendar.set(Calendar.HOUR_OF_DAY, 23)
-        calendar.set(Calendar.MINUTE, 59)
-        calendar.set(Calendar.SECOND, 59)
-        calendar.set(Calendar.MILLISECOND, 999)
-        val endOfTomorrow = calendar.timeInMillis
-
-        val plannedMeals = repository.getPlannedMealsForDateRange(now, now + (48 * 60 * 60 * 1000))
+        
         val nextMeal = plannedMeals.firstOrNull()
 
         provideContent {
@@ -129,7 +126,7 @@ class MealReminderWidget : GlanceAppWidget() {
                         )
                     } else {
                         Text(
-                            text = "Sin comidas para mañana",
+                            text = "Sin comidas agendadas",
                             style = TextStyle(
                                 fontSize = TypographyFoodii.bodyMedium.fontSize,
                                 color = ColorProvider(day = primaryLight, night = primaryDark),

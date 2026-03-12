@@ -9,8 +9,9 @@ import com.example.foodii.feature.auth.domain.entity.User
 import com.example.foodii.feature.auth.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import javax.inject.Inject
 
-class AuthRepositoryImpl(
+class AuthRepositoryImpl @Inject constructor(
     private val api: AuthApi,
     private val localDataSource: AuthLocalDataSource
 ) : AuthRepository {
