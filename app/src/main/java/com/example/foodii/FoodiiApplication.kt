@@ -31,7 +31,7 @@ class FoodiiApplication : Application(), Configuration.Provider {
 
     private fun setupMealReminderWorker() {
         val workRequest = PeriodicWorkRequestBuilder<MealReminderWorker>(
-            24, TimeUnit.HOURS // Run once a day
+            24, TimeUnit.HOURS
         ).build()
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(

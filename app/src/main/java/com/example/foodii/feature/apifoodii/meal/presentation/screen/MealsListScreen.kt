@@ -1,19 +1,27 @@
 package com.example.foodii.feature.apifoodii.meal.presentation.screen
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.example.compose.FoodiiTheme
 import com.example.compose.backgroundLight
 import com.example.compose.onPrimaryDark
@@ -34,12 +42,31 @@ fun MealsListScreen(
     onLogoutClick: () -> Unit,
     onMealClick: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+        }
+    }
+
     FoodiiTheme( dynamicColor = false) {
         val uiState by viewModel.uiState.collectAsState()
         val meals by viewModel.allMeals.collectAsState()
 
         LaunchedEffect(Unit) {
             viewModel.loadAllMeals(userId)
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
         }
 
         Scaffold(
@@ -76,6 +103,15 @@ fun MealsListScreen(
                         }
                     }
                 )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { viewModel.sendTestNotification(userId) },
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ) {
+                    Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
+                }
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {

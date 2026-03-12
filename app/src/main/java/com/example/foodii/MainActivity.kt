@@ -51,14 +51,11 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(widgetMealId, currentUser) {
                     if (currentUser != null && !widgetMealId.isNullOrEmpty()) {
-                        // 1. Establecemos la lista principal como base y limpiamos el login
                         navController.navigate("meals_list") {
                             popUpTo("login") { inclusive = true }
                         }
-                        // 2. Agregamos el Menú Semanal (comidas agendadas) a la pila
                         navController.navigate("meals_summary")
                         
-                        // 3. Abrimos el detalle. Al volver atrás, irá a meals_summary
                         navController.navigate("meal_detail/$widgetMealId")
                     }
                 }

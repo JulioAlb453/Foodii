@@ -5,7 +5,11 @@ import android.util.Log
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.example.foodii.core.hardware.domain.ShakeDetector
+import com.example.foodii.core.utils.NotificationHelper
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
@@ -19,6 +23,7 @@ import com.example.foodii.feature.mealdb.domain.entity.MealDetail
 import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.PlanMealUseCase
 import com.example.foodii.feature.mealdb.presentation.widget.MealReminderWidget
+import com.example.foodii.feature.mealdb.data.worker.SingleMealNotificationWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -26,7 +31,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
 
 class MealFoodiiViewModel(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
@@ -229,17 +234,62 @@ class MealFoodiiViewModel(
     fun scheduleMealReminder(meal: FoodiiMeal, dateMillis: Long) {
         viewModelScope.launch {
             try {
+                // 1. Guardar en la base de datos agendada
                 val mealDetail = MealDetail(
                     id = meal.id,
                     name = meal.name,
-                    instructions = "Comida programada desde Foodii",
+                    instructions = meal.instructions.ifEmpty { "Toca para ver la receta" },
                     imageUrl = ""
                 )
                 planMealUseCase(mealDetail, dateMillis, meal.createdBy)
+                
+                // 2. Programar la Alerta local (Notificación)
+                val currentTime = System.currentTimeMillis()
+                val delay = dateMillis - currentTime
+                
+                if (delay > 0) {
+                    val workRequest = OneTimeWorkRequestBuilder<SingleMealNotificationWorker>()
+                        .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                        .setInputData(workDataOf(
+                            "meal_name" to meal.name,
+                            "meal_id" to meal.id
+                        ))
+                        .addTag("alert_${meal.id}")
+                        .build()
+
+                    WorkManager.getInstance(context).enqueue(workRequest)
+                    Log.d("MealFoodiiViewModel", "Alerta programada para ${meal.name} en $delay ms")
+                }
+
                 MealReminderWidget().updateAll(context)
-                Log.d("MealFoodiiViewModel", "Recordatorio de comida agendado correctamente")
             } catch (e: Exception) {
                 Log.e("MealFoodiiViewModel", "Error al agendar recordatorio", e)
+            }
+        }
+    }
+
+    fun sendTestNotification(userId: String) {
+        viewModelScope.launch {
+            try {
+                val nextMeal = getPlannedMealsUseCase.getNextPlannedMeal(userId)
+                
+                if (nextMeal != null) {
+                    NotificationHelper.showMealAlert(
+                        context = context,
+                        title = "Próxima comida agendada",
+                        message = "Tienes pendiente: ${nextMeal.name}",
+                        mealId = nextMeal.mealId
+                    )
+                } else {
+                    NotificationHelper.showMealAlert(
+                        context = context,
+                        title = "Sin agenda próxima",
+                        message = "No tienes comidas programadas para los próximos días.",
+                        mealId = "no_meals"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("MealFoodiiViewModel", "Error al enviar notificación de prueba", e)
             }
         }
     }
