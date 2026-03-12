@@ -93,7 +93,6 @@ fun MealDetailsScreen(
         }
     }
 
-    // Diálogo de Detalles
     if (showDetails && selectedMeal != null) {
         Dialog(onDismissRequest = { showDetails = false }) {
             Card(
@@ -167,7 +166,6 @@ fun MealDetailsScreen(
         }
     }
 
-    // Diálogo de Calendario
     if (showDatePicker && selectedMeal != null) {
         ScheduleMealDialog(
             onDismiss = { showDatePicker = false },

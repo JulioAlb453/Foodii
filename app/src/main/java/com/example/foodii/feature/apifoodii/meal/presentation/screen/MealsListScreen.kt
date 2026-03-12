@@ -43,13 +43,9 @@ fun MealsListScreen(
     onMealClick: (String) -> Unit
 ) {
     val context = LocalContext.current
-    
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
-        }
-    }
+    ) { }
 
     FoodiiTheme( dynamicColor = false) {
         val uiState by viewModel.uiState.collectAsState()
@@ -57,13 +53,8 @@ fun MealsListScreen(
 
         LaunchedEffect(Unit) {
             viewModel.loadAllMeals(userId)
-            
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
@@ -81,29 +72,18 @@ fun MealsListScreen(
                     title = { Text("Platillos Disponibles", fontWeight = FontWeight.Bold) },
                     actions = {
                         IconButton(onClick = onIngredientsClick) {
-                            Icon(
-                                imageVector = Icons.Default.ShoppingBasket,
-                                contentDescription = "Ingredientes",
-                                tint = onPrimaryDark
-                            )
+                            Icon(Icons.Default.ShoppingBasket, contentDescription = "Ingredientes", tint = onPrimaryDark)
                         }
                         IconButton(onClick = onViewSummaryClick) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarMonth,
-                                contentDescription = "Ver Agenda",
-                                tint = onPrimaryDark
-                            )
+                            Icon(Icons.Default.CalendarMonth, contentDescription = "Ver Agenda", tint = onPrimaryDark)
                         }
                         IconButton(onClick = onLogoutClick) {
-                            Icon(
-                                imageVector = Icons.Default.Logout,
-                                contentDescription = "Cerrar Sesión",
-                                tint = onPrimaryDark
-                            )
+                            Icon(Icons.Default.Logout, contentDescription = "Cerrar Sesión", tint = onPrimaryDark)
                         }
                     }
                 )
             },
+            floatingActionButtonPosition = FabPosition.Start,
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = { viewModel.sendTestNotification(userId) },
@@ -115,43 +95,22 @@ fun MealsListScreen(
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                when {
-                    uiState.isLoading && meals.isEmpty() -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            color = primaryLight
-                        )
+                if (uiState.isLoading && meals.isEmpty()) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = primaryLight)
+                } else if (meals.isEmpty()) {
+                    Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Restaurant, contentDescription = null, modifier = Modifier.size(64.dp), tint = outlineLight)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("No hay platillos creados", color = outlineLight)
                     }
-                    meals.isEmpty() -> {
-                        Column(
-                            modifier = Modifier.align(Alignment.Center),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                Icons.Default.Restaurant,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = outlineLight
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                "No hay platillos creados",
-                                color = outlineLight
-                            )
-                        }
-                    }
-                    else -> {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(meals) { meal ->
-                                MealItemCard(
-                                    meal = meal,
-                                    onClick = { onMealClick(meal.id) }
-                                )
-                            }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(meals) { meal ->
+                            MealItemCard(meal = meal, onClick = { onMealClick(meal.id) })
                         }
                     }
                 }

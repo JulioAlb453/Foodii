@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +36,34 @@ fun PlannerScreen(
     onBackPressed: () -> Unit
 ) {
     val meals by viewModel.plannedMeals.collectAsState()
+    var showDatePicker by remember { mutableStateOf(false) }
+    var selectedMealId by remember { mutableStateOf<Int?>(null) }
+    val datePickerState = rememberDatePickerState()
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { newDate ->
+                        selectedMealId?.let { id ->
+                            viewModel.updateMealDate(id, newDate)
+                        }
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("Actualizar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     Scaffold(
         containerColor = backgroundLight,
@@ -71,7 +100,13 @@ fun PlannerScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(sortedMeals) { planned ->
-                    PlannedMealItem(planned)
+                    PlannedMealItem(
+                        planned = planned,
+                        onChangeDateClick = {
+                            selectedMealId = planned.id
+                            showDatePicker = true
+                        }
+                    )
                 }
             }
         }
@@ -79,7 +114,10 @@ fun PlannerScreen(
 }
 
 @Composable
-fun PlannedMealItem(planned: PlannedMealEntity) {
+fun PlannedMealItem(
+    planned: PlannedMealEntity,
+    onChangeDateClick: () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
 
     Column {
@@ -100,6 +138,19 @@ fun PlannedMealItem(planned: PlannedMealEntity) {
                     imageUrl = planned.imageUrl,
                     onClick = { expanded = !expanded }
                 )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onChangeDateClick) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Cambiar Fecha")
+                    }
+                }
 
                 AnimatedVisibility(visible = expanded) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -130,13 +181,13 @@ fun DateHeader(millis: Long) {
         color = secondaryLight,
         shape = MaterialTheme.shapes.large,
         modifier = Modifier
-            .padding(start = 160.dp, bottom = 20.dp)
+            .padding(bottom = 8.dp)
             .wrapContentSize()
     ) {
         Text(
             text = dateStr,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-            style = TypographyFoodii.bodyLarge,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            style = TypographyFoodii.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = onPrimaryLight,
         )

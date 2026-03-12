@@ -12,4 +12,6 @@ interface PlannerRepository {
     fun getPlannedMeals(userId: String): Flow<List<PlannedMealEntity>>
 
     suspend fun getPlannedMealsForDateRange(userId: String, start: Long, end: Long): List<PlannedMealEntity>
+
+    suspend fun updatePlannedMealDate(id: Int, newDate: Long, userId: String)
 }

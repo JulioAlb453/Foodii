@@ -27,6 +27,8 @@ import com.example.foodii.feature.auth.presentation.AuthViewModel
 import com.example.foodii.feature.auth.presentation.AuthViewModelFactory
 import com.example.foodii.feature.auth.presentation.LoginScreen
 import com.example.foodii.feature.auth.presentation.RegisterScreen
+import com.example.foodii.feature.mealdb.presentation.screen.PlannerScreen
+import com.example.foodii.feature.mealdb.presentation.viewmodel.PlannerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -55,7 +57,6 @@ class MainActivity : ComponentActivity() {
                             popUpTo("login") { inclusive = true }
                         }
                         navController.navigate("meals_summary")
-                        
                         navController.navigate("meal_detail/$widgetMealId")
                     }
                 }
@@ -165,6 +166,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                    }
+
+                    composable("planner") {
+                        PlannerScreen(
+                            onBackPressed = { navController.navigateUp() }
+                        )
                     }
 
                     composable("ingredients") {
