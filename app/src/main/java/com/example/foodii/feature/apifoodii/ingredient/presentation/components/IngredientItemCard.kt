@@ -20,9 +20,11 @@ import com.example.ui.theme.TypographyFoodii
 @Composable
 fun IngredientItemCard(
     ingredient: Ingredient,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),

@@ -15,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.compose.*
+import com.example.foodii.feature.apifoodii.ingredient.domain.entity.Ingredient
 import com.example.foodii.feature.apifoodii.ingredient.presentation.components.CreateIngredientDialog
+import com.example.foodii.feature.apifoodii.ingredient.presentation.components.EditIngredientDialog
 import com.example.foodii.feature.apifoodii.ingredient.presentation.components.IngredientItemCard
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
 
@@ -29,6 +31,7 @@ fun IngredientsScreen(
         val uiState by viewModel.uiState.collectAsState()
         var searchQuery by remember { mutableStateOf("") }
         var showCreateDialog by remember { mutableStateOf(false) }
+        var editingIngredient by remember { mutableStateOf<Ingredient?>(null) }
 
         val filteredIngredients = remember(searchQuery, uiState.ingredients) {
             if (searchQuery.isBlank()) {
@@ -46,6 +49,17 @@ fun IngredientsScreen(
                 onConfirm = { name, calories ->
                     viewModel.createIngredient(name, calories)
                     showCreateDialog = false
+                }
+            )
+        }
+
+        editingIngredient?.let { ingredient ->
+            EditIngredientDialog(
+                ingredient = ingredient,
+                onDismiss = { editingIngredient = null },
+                onConfirm = { updatedIngredient ->
+                    viewModel.updateIngredient(updatedIngredient)
+                    editingIngredient = null
                 }
             )
         }
@@ -164,7 +178,10 @@ fun IngredientsScreen(
                                 )
                             }
                             items(filteredIngredients) { ingredient ->
-                                IngredientItemCard(ingredient = ingredient)
+                                IngredientItemCard(
+                                    ingredient = ingredient,
+                                    onClick = { editingIngredient = ingredient }
+                                )
                             }
                         }
                     }
