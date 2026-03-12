@@ -12,6 +12,13 @@ class GetPlannedMealsUseCase @Inject constructor(
         return repository.getPlannedMeals(userId)
     }
 
+    suspend fun getNextPlannedMeal(userId: String): PlannedMealEntity? {
+        val now = System.currentTimeMillis()
+        val futureMeals = repository.getPlannedMealsForDateRange(userId,
+            now, now + (7 * 24 * 60 * 60 * 1000L))
+        return futureMeals.firstOrNull()
+    }
+
     suspend fun getForTomorrow(userId: String): List<PlannedMealEntity> {
         val calendar = java.util.Calendar.getInstance()
         calendar.add(java.util.Calendar.DAY_OF_YEAR, 1)
