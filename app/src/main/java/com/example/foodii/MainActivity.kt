@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
                         val user = currentUser
                         if (user != null) {
                             val viewModel: MealFoodiiViewModel = viewModel(
-                                factory = appContainer.foodiiFeatureModule.provideMealViewModelFactory()
+                                factory = appContainer.mealModule.provideMealViewModelFactory()
                             )
 
                             MealsListScreen(
@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                         val user = currentUser
                         if (user != null) {
                             val viewModel: MealFoodiiViewModel = viewModel(
-                                factory = appContainer.foodiiFeatureModule.provideMealViewModelFactory()
+                                factory = appContainer.mealModule.provideMealViewModelFactory()
                             )
                             MealDetailScreen(
                                 viewModel = viewModel,
@@ -140,7 +140,8 @@ class MainActivity : ComponentActivity() {
                         val user = currentUser
                         if (user != null) {
                             val viewModel: MealFoodiiViewModel = viewModel(
-                                factory = appContainer.foodiiFeatureModule.provideMealViewModelFactory()
+                                factory = appContainer.
+                                mealModule.provideMealViewModelFactory()
                             )
                             MealsSummaryScreen(
                                 viewModel = viewModel,
@@ -152,7 +153,9 @@ class MainActivity : ComponentActivity() {
 
                     composable("ingredients") {
                         val viewModel: IngredientViewModel = viewModel(
-                            factory = appContainer.foodiiFeatureModule.provideIngredientViewModelFactory()
+                            factory = appContainer.
+                            ingredientModule.
+                            provideIngredientViewModelFactory()
                         )
                         IngredientsScreen(
                             viewModel = viewModel,

@@ -17,22 +17,27 @@ class GetFoodiiMealByIdUseCase(
                 val detail = ingredientRepository.findById(basicIngredient.ingredientId, userId)
                 
                 if (detail != null) {
-                    val calories = (detail.caloriesPer100g * basicIngredient.amount) / 100.0
+                    val calculatedCalories = (detail.caloriesPer100g * basicIngredient.amount) / 100.0
+                    // Si el ingrediente ya tiene calorías de la API, las usamos, si no usamos el cálculo
                     basicIngredient.copy(
                         name = detail.name,
-                        calories = calories
+                        calories = if (basicIngredient.calories > 0) basicIngredient.calories else calculatedCalories
                     )
                 } else {
                     basicIngredient
                 }
             }
 
-            val totalCalories = enrichedIngredients.sumOf { it.calories }
+            val finalTotalCalories = if (meal.totalCalories > 0) {
+                meal.totalCalories
+            } else {
+                enrichedIngredients.sumOf { it.calories }
+            }
 
             Result.success(
                 meal.copy(
                     ingredients = enrichedIngredients,
-                    totalCalories = totalCalories
+                    totalCalories = finalTotalCalories
                 )
             )
         } catch (e: Exception) {
