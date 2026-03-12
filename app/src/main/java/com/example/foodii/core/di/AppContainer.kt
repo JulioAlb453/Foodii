@@ -96,11 +96,8 @@ class AppContainer(context: Context) {
 
     val ingredientModule: IngredientFoodiiModule by lazy {
         IngredientFoodiiModule(
-            mealRepository = foodiiRepository,
             ingredientRepository = ingredientRepository,
-            authRepository = authRepository,
-            plannerRepository = plannerRepository,
-            context = context
+            authRepository = authRepository
         )
     }
 }

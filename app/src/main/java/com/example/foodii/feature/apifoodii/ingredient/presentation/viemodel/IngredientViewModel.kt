@@ -6,6 +6,7 @@ import com.example.foodii.feature.apifoodii.ingredient.domain.entity.Ingredient
 import com.example.foodii.feature.apifoodii.ingredient.domain.usecase.*
 import com.example.foodii.feature.apifoodii.ingredient.presentation.screen.IngredientFoodiiDetailsUiState
 import com.example.foodii.feature.auth.domain.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+@HiltViewModel
 class IngredientViewModel @Inject constructor(
     private val getIngredientsUseCase: GetIngredientsUseCase,
     private val createIngredientUseCase: CreateIngredientUseCase,

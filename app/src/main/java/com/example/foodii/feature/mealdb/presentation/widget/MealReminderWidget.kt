@@ -1,13 +1,16 @@
 package com.example.foodii.feature.mealdb.presentation.widget
 
 import android.content.Context
-import androidx.compose.runtime.Composable
+import android.content.Intent
+import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
@@ -20,6 +23,10 @@ import com.example.compose.primaryLight
 import com.example.compose.surfaceVariantLight
 import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
 import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
+import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
+import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
+import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
+import com.example.foodii.MainActivity
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -30,8 +37,8 @@ import androidx.glance.ImageProvider
 import androidx.glance.color.ColorProvider
 import androidx.glance.text.TextStyle
 import com.example.compose.primaryDark
-
 import com.example.ui.theme.TypographyFoodii
+import kotlinx.coroutines.flow.firstOrNull
 
 
 class MealReminderWidget : GlanceAppWidget() {
@@ -40,45 +47,50 @@ class MealReminderWidget : GlanceAppWidget() {
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
         fun plannerRepository(): PlannerRepository
+        fun authLocalDataSource(): AuthLocalDataSource
+        fun mealRepository(): MealFoodiiRepository
     }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appContext = context.applicationContext
         val entryPoint = EntryPointAccessors.fromApplication(appContext, WidgetEntryPoint::class.java)
         val repository = entryPoint.plannerRepository()
+        val authDataSource = entryPoint.authLocalDataSource()
+        val mealRepository = entryPoint.mealRepository()
+
+        val user = authDataSource.getUser().firstOrNull()
+        val userId = user?.id ?: ""
 
         val now = System.currentTimeMillis()
-
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+        val plannedMeals = if (userId.isNotEmpty()) {
+            repository.getPlannedMealsForDateRange(userId, now, now + (48 * 60 * 60 * 1000))
+        } else {
+            emptyList()
         }
-        val startOfTomorrow = calendar.timeInMillis
+        
+        val nextPlanned = plannedMeals.firstOrNull()
+        val fullMealDetail = nextPlanned?.let { mealRepository.getMealById(it.mealId, userId) }
 
-        calendar.set(Calendar.HOUR_OF_DAY, 23)
-        calendar.set(Calendar.MINUTE, 59)
-        calendar.set(Calendar.SECOND, 59)
-        calendar.set(Calendar.MILLISECOND, 999)
-        val endOfTomorrow = calendar.timeInMillis
-
-        val plannedMeals = repository.getPlannedMealsForDateRange(now, now + (48 * 60 * 60 * 1000))
-        val nextMeal = plannedMeals.firstOrNull()
+        // Creamos el intent con el ID de la comida
+        val intent = Intent(context, MainActivity::class.java).apply {
+            putExtra("mealId", nextPlanned?.mealId)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
 
         provideContent {
-            WidgetContent(nextMeal)
+            WidgetContent(nextPlanned, fullMealDetail, intent)
         }
     }
+
     @Composable
-    private fun WidgetContent(meal: PlannedMealEntity?) {
+    private fun WidgetContent(planned: PlannedMealEntity?, detail: FoodiiMeal?, intent: Intent) {
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .appWidgetBackground()
                 .background(surfaceVariantLight)
                 .cornerRadius(16.dp)
+                .clickable(actionStartActivity(intent)) // Ahora enviamos el intent con extras
         ) {
             Image(
                 provider = ImageProvider(R.drawable.bg_widget_wave),
@@ -105,12 +117,12 @@ class MealReminderWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.defaultWeight(),
                     verticalAlignment = Alignment.Vertical.CenterVertically
                 ) {
-                    if (meal != null) {
+                    if (planned != null) {
                         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                        val dateString = sdf.format(Date(meal.date))
+                        val dateString = sdf.format(Date(planned.date))
 
                         Text(
-                            text = meal.name,
+                            text = planned.name,
                             maxLines = 1,
                             style = TextStyle(
                                 fontSize = TypographyFoodii.titleLarge.fontSize,
@@ -119,7 +131,16 @@ class MealReminderWidget : GlanceAppWidget() {
                             )
                         )
 
-                        // Fecha y etiqueta pequeña
+                        val instructions = detail?.instructions ?: "Toca para ver la receta"
+                        Text(
+                            text = instructions,
+                            maxLines = 1,
+                            style = TextStyle(
+                                fontSize = TypographyFoodii.bodySmall.fontSize,
+                                color = ColorProvider(day = primaryLight.copy(alpha = 0.7f), night = primaryLight)
+                            )
+                        )
+
                         Text(
                             text = "Próxima comida • $dateString",
                             style = TextStyle(
@@ -129,7 +150,7 @@ class MealReminderWidget : GlanceAppWidget() {
                         )
                     } else {
                         Text(
-                            text = "Sin comidas para mañana",
+                            text = "Sin comidas agendadas",
                             style = TextStyle(
                                 fontSize = TypographyFoodii.bodyMedium.fontSize,
                                 color = ColorProvider(day = primaryLight, night = primaryDark),
@@ -137,16 +158,7 @@ class MealReminderWidget : GlanceAppWidget() {
                         )
                     }
                 }
-
             }
-
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .padding(horizontal = 40.dp)
-                    .background(primaryLight)
-            ) {}
         }
     }
 }

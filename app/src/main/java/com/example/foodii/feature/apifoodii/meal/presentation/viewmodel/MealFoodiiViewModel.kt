@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class MealFoodiiViewModel(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
@@ -83,6 +84,7 @@ class MealFoodiiViewModel(
             try {
                 getMealsUseCase(userId).collect { meals ->
                     _allMeals.value = meals
+                    updateCombinedSummaries(userId, "", "")
                     _uiState.update { it.copy(isLoading = false) }
                 }
             } catch (e: Exception) {
@@ -113,8 +115,15 @@ class MealFoodiiViewModel(
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
-                viewModelScope.launch {
-                    getPlannedMealsUseCase().collect { localPlanned ->
+                launch {
+                    getMealsUseCase(userId).collect { meals ->
+                        _allMeals.value = meals
+                        updateCombinedSummaries(userId, startDate, endDate)
+                    }
+                }
+
+                launch {
+                    getPlannedMealsUseCase(userId).collect { localPlanned ->
                         _plannedMeals.value = localPlanned
                         updateCombinedSummaries(userId, startDate, endDate)
                     }
@@ -133,43 +142,56 @@ class MealFoodiiViewModel(
     private fun updateCombinedSummaries(userId: String, startDate: String, endDate: String) {
         val apiSummaries = _summaries.value
         val localPlanned = _plannedMeals.value
+        val allCreatedMeals = _allMeals.value
 
         val localGrouped = localPlanned.groupBy { 
-            Instant.ofEpochMilli(it.date).atZone(ZoneId.of("UTC")).toLocalDate().toString()
+            val date = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
+            date.toString()
         }
 
         val combined = apiSummaries.map { summary ->
-            val extraMeals = localGrouped[summary.date]?.map { 
+            val summaryDate = summary.date.substringBefore("T")
+            val existingMealIds = summary.meals.map { it.id }.toSet()
+            
+            val extraMeals = localGrouped[summaryDate]?.filter { it.mealId !in existingMealIds }?.map { planned ->
+                val matchingMeal = allCreatedMeals.find { it.id == planned.mealId }
                 FoodiiMeal(
-                    id = it.mealId,
-                    name = it.name,
-                    date = Instant.ofEpochMilli(it.date).atZone(ZoneId.of("UTC")).toLocalDate(),
+                    id = planned.mealId,
+                    name = planned.name,
+                    date = Instant.ofEpochMilli(planned.date).atZone(ZoneId.systemDefault()).toLocalDate(),
                     mealTime = FoodiiMealTime.SNACK,
-                    totalCalories = 0.0,
+                    totalCalories = matchingMeal?.totalCalories ?: 0.0,
                     createdBy = userId,
                     ingredients = emptyList()
                 )
             } ?: emptyList()
             
-            summary.copy(meals = summary.meals + extraMeals)
+            val allDayMeals = (summary.meals + extraMeals).distinctBy { it.id }
+            summary.copy(
+                date = summaryDate, 
+                meals = allDayMeals,
+                totalCalories = allDayMeals.sumOf { it.totalCalories }
+            )
         }
         
-        val apiDates = apiSummaries.map { it.date }.toSet()
+        val apiDates = combined.map { it.date }.toSet()
         val extraSummaries = localGrouped.filter { it.key !in apiDates }.map { (date, meals) ->
+            val mappedMeals = meals.distinctBy { it.mealId }.map { planned ->
+                val matchingMeal = allCreatedMeals.find { it.id == planned.mealId }
+                FoodiiMeal(
+                    id = planned.mealId,
+                    name = planned.name,
+                    date = Instant.ofEpochMilli(planned.date).atZone(ZoneId.systemDefault()).toLocalDate(),
+                    mealTime = FoodiiMealTime.SNACK,
+                    totalCalories = matchingMeal?.totalCalories ?: 0.0,
+                    createdBy = userId,
+                    ingredients = emptyList()
+                )
+            }
             DailySummary(
                 date = date,
-                totalCalories = 0.0,
-                meals = meals.map { 
-                    FoodiiMeal(
-                        id = it.mealId,
-                        name = it.name,
-                        date = Instant.ofEpochMilli(it.date).atZone(ZoneId.of("UTC")).toLocalDate(),
-                        mealTime = FoodiiMealTime.SNACK,
-                        totalCalories = 0.0,
-                        createdBy = userId,
-                        ingredients = emptyList()
-                    )
-                }
+                totalCalories = mappedMeals.sumOf { it.totalCalories },
+                meals = mappedMeals
             )
         }
 
@@ -213,7 +235,7 @@ class MealFoodiiViewModel(
                     instructions = "Comida programada desde Foodii",
                     imageUrl = ""
                 )
-                planMealUseCase(mealDetail, dateMillis)
+                planMealUseCase(mealDetail, dateMillis, meal.createdBy)
                 MealReminderWidget().updateAll(context)
                 Log.d("MealFoodiiViewModel", "Recordatorio de comida agendado correctamente")
             } catch (e: Exception) {

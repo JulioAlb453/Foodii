@@ -19,28 +19,34 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
     private val TAG = "IngredientRepository"
 
     override suspend fun getAllIngredients(userId: String): List<Ingredient> {
-        Log.d(TAG, "Iniciando obtención de ingredientes para el usuario: $userId")
         try {
             val response = api.getAllIngredientsAPI(userId = userId)
             if (response.success == true && response.ingredients != null) {
+                Log.d(TAG, "Sincronizando ${response.ingredients.size} ingredientes para userId: $userId")
                 val entities = response.ingredients.map { dto ->
                     val domain = dto.toDomain()
+                    
+                    // CORRECCIÓN: Si el servidor no envía createdBy, usamos el userId de la petición
+                    val finalCreatedBy = if (domain.createdBy.isEmpty()) userId else domain.createdBy
+                    
                     IngredientRoomEntity(
                         id = domain.id,
                         name = domain.name,
                         caloriesPer100g = domain.caloriesPer100g,
-                        createdBy = domain.createdBy,
+                        createdBy = finalCreatedBy,
                         createdAt = domain.createdAt?.time
                     )
                 }
                 ingredientDao.insertIngredients(entities)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error al obtener ingredientes de la API: ${e.message}")
+            Log.e(TAG, "Error al obtener ingredientes de red: ${e.message}")
         }
 
         return try {
-            ingredientDao.getAllIngredients(userId).first().map { entity ->
+            val localEntities = ingredientDao.getAllIngredients(userId).first()
+            Log.d(TAG, "Encontrados localmente para $userId: ${localEntities.size} ingredientes")
+            localEntities.map { entity ->
                 Ingredient(
                     id = entity.id,
                     name = entity.name,
@@ -50,6 +56,7 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
                 )
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Error al leer ingredientes de Room: ${e.message}")
             emptyList()
         }
     }
@@ -69,18 +76,44 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
         return try {
             val response = api.getIngredientByIdAPI(id = id)
             response.ingredient?.toDomain()?.also { domain ->
+                // CORRECCIÓN: También aquí aseguramos el createdBy
+                val finalCreatedBy = if (domain.createdBy.isEmpty()) userId else domain.createdBy
                 ingredientDao.insertIngredient(
                     IngredientRoomEntity(
                         id = domain.id,
                         name = domain.name,
                         caloriesPer100g = domain.caloriesPer100g,
-                        createdBy = domain.createdBy,
+                        createdBy = finalCreatedBy,
                         createdAt = domain.createdAt?.time
                     )
                 )
             }
         } catch (e: Exception) {
             null
+        }
+    }
+
+    override suspend fun createIngredient(ingredient: Ingredient, userId: String): Result<Unit> {
+        return try {
+            // Aseguramos que el ingrediente tenga el userId antes de mandarlo/guardarlo
+            val ingredientWithUser = if (ingredient.createdBy.isEmpty()) ingredient.copy(createdBy = userId) else ingredient
+            val response = api.updateIngredientAPI(id = ingredientWithUser.id, ingredient = ingredientWithUser.toDto())
+            if (response.success == true) {
+                ingredientDao.insertIngredient(
+                    IngredientRoomEntity(
+                        id = ingredientWithUser.id,
+                        name = ingredientWithUser.name,
+                        caloriesPer100g = ingredientWithUser.caloriesPer100g,
+                        createdBy = ingredientWithUser.createdBy,
+                        createdAt = ingredientWithUser.createdAt?.time
+                    )
+                )
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Error al crear ingrediente"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
@@ -99,7 +132,7 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
                 )
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Error al actualizar ingrediente en el servidor"))
+                Result.failure(Exception("Error al actualizar ingrediente"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -113,7 +146,7 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
                 ingredientDao.deleteIngredientById(id, userId)
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Error al eliminar ingrediente en el servidor"))
+                Result.failure(Exception("Error al eliminar ingrediente"))
             }
         } catch (e: Exception) {
             Result.failure(e)
