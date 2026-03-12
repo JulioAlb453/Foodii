@@ -2,8 +2,7 @@ package com.example.foodii.feature.apifoodii.ingredient.di
 
 import android.content.Context
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
-import com.example.foodii.feature.apifoodii.ingredient.domain.usecase.CalculateCaloriesUseCase
-import com.example.foodii.feature.apifoodii.ingredient.domain.usecase.GetIngredientsUseCase
+import com.example.foodii.feature.apifoodii.ingredient.domain.usecase.*
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModelFactory
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
@@ -44,6 +43,18 @@ class IngredientFoodiiModule(
         return GetIngredientsUseCase(ingredientRepository)
     }
 
+    private fun provideCreateIngredientUseCase(): CreateIngredientUseCase {
+        return CreateIngredientUseCase(ingredientRepository)
+    }
+
+    private fun provideUpdateIngredientUseCase(): UpdateIngredientUseCase {
+        return UpdateIngredientUseCase(ingredientRepository)
+    }
+
+    private fun provideDeleteIngredientUseCase(): DeleteIngredientUseCase {
+        return DeleteIngredientUseCase(ingredientRepository)
+    }
+
     private fun provideCalculateCaloriesUseCase(): CalculateCaloriesUseCase {
         return CalculateCaloriesUseCase(ingredientRepository)
     }
@@ -72,6 +83,9 @@ class IngredientFoodiiModule(
     fun provideIngredientViewModelFactory(): IngredientViewModelFactory {
         return IngredientViewModelFactory(
             getIngredientsUseCase = provideGetIngredientsUseCase(),
+            createIngredientUseCase = provideCreateIngredientUseCase(),
+            updateIngredientUseCase = provideUpdateIngredientUseCase(),
+            deleteIngredientUseCase = provideDeleteIngredientUseCase(),
             calculateCaloriesUseCase = provideCalculateCaloriesUseCase(),
             authRepository = authRepository
         )
