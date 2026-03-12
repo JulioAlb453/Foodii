@@ -14,7 +14,8 @@ import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import com.example.foodii.feature.auth.data.datasource.remote.AuthApi
 import com.example.foodii.feature.auth.data.repositories.AuthRepositoryImpl
 import com.example.foodii.feature.auth.domain.repository.AuthRepository
-import com.example.foodii.feature.apifoodii.meal.di.FoodiiFeatureModule
+import com.example.foodii.feature.apifoodii.meal.di.MealFoodiiModule
+import com.example.foodii.feature.apifoodii.ingredient.di.IngredientFoodiiModule
 import com.example.foodii.feature.mealdb.data.datasource.api.MealDbApi
 import com.example.foodii.feature.mealdb.data.datasource.repositories.PlannerRepositoryImpl
 import com.example.foodii.feature.mealdb.data.local.database.FoodiiDatabase
@@ -69,11 +70,11 @@ class AppContainer(context: Context) {
     }
 
     val foodiiRepository: MealFoodiiRepository by lazy {
-        MealFoodiiRepositoryImpl(foodiiApi)
+        MealFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.mealDao())
     }
 
     val ingredientRepository: IngredientRepository by lazy {
-        IngredientFoodiiRepositoryImpl(foodiiApi)
+        IngredientFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.ingredientDao())
     }
 
     val authRepository: AuthRepository by lazy {
@@ -84,8 +85,17 @@ class AppContainer(context: Context) {
         PlannerRepositoryImpl(mealDbApi, foodiiDatabase.plannedMealDao())
     }
 
-    val foodiiFeatureModule: FoodiiFeatureModule by lazy {
-        FoodiiFeatureModule(
+    val mealModule: MealFoodiiModule by lazy {
+        MealFoodiiModule(
+            mealRepository = foodiiRepository,
+            ingredientRepository = ingredientRepository,
+            plannerRepository = plannerRepository,
+            context = context
+        )
+    }
+
+    val ingredientModule: IngredientFoodiiModule by lazy {
+        IngredientFoodiiModule(
             mealRepository = foodiiRepository,
             ingredientRepository = ingredientRepository,
             authRepository = authRepository,
