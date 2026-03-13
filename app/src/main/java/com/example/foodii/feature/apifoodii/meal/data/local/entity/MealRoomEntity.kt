@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "meals")
-
 data class MealRoomEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -14,4 +13,5 @@ data class MealRoomEntity(
     val instructions: String,
     val createdBy: String,
     val ingredientsJson: String,
-    )
+    val image: String? = null
+)
