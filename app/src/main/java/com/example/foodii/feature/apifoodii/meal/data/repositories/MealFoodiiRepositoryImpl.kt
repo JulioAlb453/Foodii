@@ -74,8 +74,7 @@ class MealFoodiiRepositoryImpl @Inject constructor(
                         tempFile.outputStream().use { inputStream?.copyTo(it) }
                         val requestFile = tempFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
                         imagePart = MultipartBody.Part.createFormData("image", tempFile.name, requestFile)
-                    } catch (e: Exception) {
-                    }
+                    } catch (e: Exception) { }
                 }
 
                 val response = api.createMealAPI(userIdRB, nameRB, dateRB, mealTimeRB, ingredientsRB, imagePart)
@@ -119,6 +118,19 @@ class MealFoodiiRepositoryImpl @Inject constructor(
             mealDao.deleteMeal(id, userId)
         } catch (e: Exception) {
             Log.e("ROOM_DB", "Error eliminando")
+        }
+    }
+
+    override suspend fun getRandomMeal(userId: String): Result<FoodiiMeal> {
+        return try {
+            val response = api.getRandomMealAPI()
+            if (response.isSuccessful && response.body()?.meal != null) {
+                Result.success(response.body()!!.meal!!.toDomainFromRemote())
+            } else {
+                Result.failure(Exception("NO_MEALS_FOUND"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

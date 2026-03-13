@@ -12,27 +12,22 @@ class AuthInterceptor(
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        Log.e("AWS_AUTH", "--- Iniciando Interceptor de Red ---")
-        
         val user = runBlocking {
             localDataSource.getUser().firstOrNull()
         }
-        val token = user?.token
+
+        val token = user?.token?.trim()?.replace("\"", "")
 
         val requestBuilder = chain.request().newBuilder()
         
         if (!token.isNullOrEmpty()) {
-            // Express suele requerir el prefijo "Bearer "
             val formattedToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
-            Log.e("AWS_AUTH", "TOKEN ENCONTRADO: ${formattedToken.take(20)}...")
+            Log.d("AWS_AUTH", "Token válido aplicado a: ${chain.request().url.encodedPath}")
             requestBuilder.header("Authorization", formattedToken)
         } else {
-            Log.e("AWS_AUTH", "ERROR: No hay token en DataStore. ¿Usuario logueado?")
+            Log.e("AWS_AUTH", "ALERTA: Sin token para: ${chain.request().url}")
         }
 
-        val request = requestBuilder.build()
-        Log.e("AWS_AUTH", "Enviando petición a: ${request.url}")
-
-        return chain.proceed(request)
+        return chain.proceed(requestBuilder.build())
     }
 }
