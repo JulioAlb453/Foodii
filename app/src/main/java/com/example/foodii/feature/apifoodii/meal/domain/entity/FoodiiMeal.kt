@@ -10,6 +10,7 @@ data class FoodiiMeal(
     val totalCalories: Double,
     val createdBy: String,
     val instructions: String = "",
+    val image: String? = null,
     val ingredients: List<FoodiiMealIngredient> = emptyList()
 )
 

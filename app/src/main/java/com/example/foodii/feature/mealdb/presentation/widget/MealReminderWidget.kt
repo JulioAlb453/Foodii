@@ -57,21 +57,19 @@ class MealReminderWidget : GlanceAppWidget() {
         val repository = entryPoint.plannerRepository()
         val authDataSource = entryPoint.authLocalDataSource()
         val mealRepository = entryPoint.mealRepository()
-
         val user = authDataSource.getUser().firstOrNull()
         val userId = user?.id ?: ""
 
         val now = System.currentTimeMillis()
         val plannedMeals = if (userId.isNotEmpty()) {
-            repository.getPlannedMealsForDateRange(userId, now, now + (48 * 60 * 60 * 1000))
+            repository.getPlannedMealsForDateRange(userId, now, now + (24L * 60 * 60 * 1000))
         } else {
             emptyList()
         }
         
-        val nextPlanned = plannedMeals.firstOrNull()
+        val nextPlanned = plannedMeals.sortedBy { it.date }.firstOrNull()
         val fullMealDetail = nextPlanned?.let { mealRepository.getMealById(it.mealId, userId) }
 
-        // Creamos el intent con el ID de la comida
         val intent = Intent(context, MainActivity::class.java).apply {
             putExtra("mealId", nextPlanned?.mealId)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -90,7 +88,7 @@ class MealReminderWidget : GlanceAppWidget() {
                 .appWidgetBackground()
                 .background(surfaceVariantLight)
                 .cornerRadius(16.dp)
-                .clickable(actionStartActivity(intent)) // Ahora enviamos el intent con extras
+                .clickable(actionStartActivity(intent))
         ) {
             Image(
                 provider = ImageProvider(R.drawable.bg_widget_wave),
@@ -119,6 +117,7 @@ class MealReminderWidget : GlanceAppWidget() {
                 ) {
                     if (planned != null) {
                         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        sdf.timeZone = TimeZone.getTimeZone("UTC")
                         val dateString = sdf.format(Date(planned.date))
 
                         Text(
@@ -131,7 +130,12 @@ class MealReminderWidget : GlanceAppWidget() {
                             )
                         )
 
-                        val instructions = detail?.instructions ?: "Toca para ver la receta"
+                        val instructions = if (detail != null && detail.instructions.isNotEmpty()) {
+                            detail.instructions
+                        } else {
+                            "Toca para ver la receta"
+                        }
+
                         Text(
                             text = instructions,
                             maxLines = 1,

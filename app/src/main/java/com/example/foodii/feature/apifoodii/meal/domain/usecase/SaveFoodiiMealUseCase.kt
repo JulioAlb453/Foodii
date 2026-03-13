@@ -17,7 +17,8 @@ class SaveFoodiiMealUseCase(
         date: LocalDate,
         mealTime: FoodiiMealTime,
         ingredientsRequest: List<Pair<String, Int>>,
-        userId: String
+        userId: String,
+        image: String? = null
     ): Result<FoodiiMeal> {
 
         if (name.trim().length < 2) {
@@ -36,10 +37,6 @@ class SaveFoodiiMealUseCase(
             
             val ingredient = ingredientRepository.findById(id = ingredientId, userId = userId)
                 ?: return Result.failure(Exception("Ingrediente no encontrado"))
-
-            if (ingredient.createdBy != userId) {
-                return Result.failure(Exception("No puedes usar ingredientes de otros usuarios"))
-            }
 
             val calories = ((ingredient.caloriesPer100g * amount) / 100.0)
 
@@ -61,7 +58,8 @@ class SaveFoodiiMealUseCase(
             mealTime = mealTime,
             totalCalories = totalCalories,
             createdBy = userId,
-            ingredients = ingredientDetails
+            ingredients = ingredientDetails,
+            image = image
         )
 
         return try {

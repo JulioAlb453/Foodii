@@ -3,7 +3,8 @@ package com.example.foodii.feature.apifoodii.meal.presentation.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.foodii.core.hardware.data.AndroidShakeDetector
+import com.example.foodii.core.hardware.domain.CameraManager
+import com.example.foodii.core.hardware.domain.ShakeDetector
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRangeUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
@@ -18,7 +19,9 @@ class MealFoodiiViewModelFactory(
     private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase,
     private val planMealUseCase: PlanMealUseCase,
     private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
-    private val context: Context
+    private val context: Context,
+    private val shakeDetector: ShakeDetector,
+    private val cameraManager: CameraManager
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -32,7 +35,8 @@ class MealFoodiiViewModelFactory(
                 planMealUseCase = planMealUseCase,
                 getPlannedMealsUseCase = getPlannedMealsUseCase,
                 context = context,
-                shakeDetector = AndroidShakeDetector(context)
+                shakeDetector = shakeDetector,
+                cameraManager = cameraManager
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
