@@ -122,6 +122,35 @@ class MealFoodiiViewModel(
         }
     }
 
+    fun saveMeal(
+        name: String,
+        date: LocalDate,
+        mealTime: FoodiiMealTime,
+        ingredients: List<Pair<String, Int>>,
+        userId: String,
+        imageUri: Uri? = null
+    ) {
+        _uiState.update { it.copy(isLoading = true, error = null, successData = null) }
+        viewModelScope.launch {
+            try {
+                val imagePath = imageUri?.toString()
+                val result = saveFoodiiMealUseCase(name, date, mealTime, ingredients, userId, imagePath)
+                result.fold(
+                    onSuccess = { meal ->
+                        loadAllMeals(userId)
+                        clearForm()
+                        _uiState.update { it.copy(isLoading = false, successData = meal) }
+                    },
+                    onFailure = { error ->
+                        _uiState.update { it.copy(isLoading = false, error = error.message ?: "Error") }
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+            }
+        }
+    }
+
     fun loadMealsRange(userId: String, startDate: String, endDate: String) {
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
@@ -132,7 +161,6 @@ class MealFoodiiViewModel(
                         updateCombinedSummaries(userId, startDate, endDate)
                     }
                 }
-                
                 getMealsByDateRangeUseCase(userId, startDate, endDate).collect { apiSummaries ->
                     _summaries.value = apiSummaries
                     updateCombinedSummaries(userId, startDate, endDate)
@@ -147,7 +175,7 @@ class MealFoodiiViewModel(
         val apiSummaries = _summaries.value
         val localPlanned = _plannedMeals.value
         val allCreatedMeals = _allMeals.value
-        val localGrouped = localPlanned.groupBy {
+        val localGrouped = localPlanned.groupBy { 
             Instant.ofEpochMilli(it.date).atZone(ZoneId.of("UTC")).toLocalDate().toString()
         }
 
@@ -168,7 +196,7 @@ class MealFoodiiViewModel(
             } ?: emptyList()
             summary.copy(meals = (summary.meals + extraMeals).distinctBy { it.id })
         }
-        
+
         val apiDates = combined.map { it.date }.toSet()
         val extraSummaries = localGrouped.filter { it.key !in apiDates }.map { (date, meals) ->
             val mappedMeals = meals.map { planned ->
@@ -191,43 +219,12 @@ class MealFoodiiViewModel(
         _uiState.update { it.copy(isLoading = false) }
     }
 
-    fun saveMeal(
-        name: String,
-        date: LocalDate,
-        mealTime: FoodiiMealTime,
-        ingredients: List<Pair<String, Int>>,
-        userId: String,
-        imageUri: Uri? = null
-    ) {
-        _uiState.update { it.copy(isLoading = true, error = null) }
-        viewModelScope.launch {
-            try {
-                val imagePath = imageUri?.toString()
-                val result = saveFoodiiMealUseCase(name, date, mealTime, ingredients, userId, imagePath)
-                _uiState.update { currentState ->
-                    result.fold(
-                        onSuccess = { meal ->
-                            loadAllMeals(userId)
-                            clearForm()
-                            currentState.copy(isLoading = false, successData = meal)
-                        },
-                        onFailure = { error ->
-                            currentState.copy(isLoading = false, error = error.message ?: "Error")
-                        }
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
-            }
-        }
-    }
-
     fun scheduleMealReminder(meal: FoodiiMeal, dateMillis: Long) {
         viewModelScope.launch {
             try {
                 val mealDetail = MealDetail(id = meal.id, name = meal.name, instructions = "Toca para ver receta", imageUrl = meal.image ?: "")
                 planMealUseCase(mealDetail, dateMillis, meal.createdBy)
-                
+
                 loadMealsRange(meal.createdBy, "2023-01-01", "2025-12-31")
 
                 val delay = dateMillis - System.currentTimeMillis()
@@ -241,6 +238,23 @@ class MealFoodiiViewModel(
                 MealReminderWidget().updateAll(context)
             } catch (e: Exception) {
                 Log.e("MealFoodiiViewModel", "Error al agendar: ${e.message}")
+            }
+        }
+    }
+
+    fun loadRandomMeal(userId: String) {
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val meals = _allMeals.value.filter { it.createdBy == userId }
+                if (meals.isEmpty()) {
+                    _uiState.update { it.copy(isLoading = false, error = "No tienes comidas registradas") }
+                } else {
+                    val random = meals.random()
+                    _uiState.update { it.copy(isLoading = false, randomMeal = random) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
             }
         }
     }

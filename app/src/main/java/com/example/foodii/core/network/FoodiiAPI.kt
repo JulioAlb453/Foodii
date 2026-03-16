@@ -5,8 +5,10 @@ import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.mo
 import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.model.SingleIngredientResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.FoodiiMealResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.SingleMealResponse
+import com.example.foodii.feature.apifoodii.dish.data.datasource.remote.model.DishDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import retrofit2.Response
 import retrofit2.http.*
 
 interface FoodiiAPI {
@@ -28,6 +30,9 @@ interface FoodiiAPI {
     suspend fun getMealById(
         @Path("id") id: String
     ): SingleMealResponse
+
+    @GET("api/meals/random")
+    suspend fun getRandomMealAPI(): Response<SingleMealResponse>
 
     @Multipart
     @POST("api/meals")
@@ -60,4 +65,7 @@ interface FoodiiAPI {
     suspend fun deleteIngredientAPI(
         @Path("id") id: String
     ): SingleIngredientResponse
+
+    @GET("api/dishes/random")
+    suspend fun getRandomDishAPI(): Response<DishDto>
 }

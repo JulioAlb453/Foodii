@@ -20,6 +20,7 @@ import com.example.foodii.feature.apifoodii.meal.presentation.screen.AddMealScre
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealDetailScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsListScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsSummaryScreen
+import com.example.foodii.feature.apifoodii.meal.presentation.screen.RandomMealScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
 import com.example.foodii.feature.auth.domain.usecase.LoginUseCase
 import com.example.foodii.feature.auth.domain.usecase.LogoutUseCase
@@ -126,7 +127,22 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onMealClick = { mealId ->
                                     navController.navigate("meal_detail/$mealId")
-                                }
+                                },
+                                onRandomDishClick = { navController.navigate("recommendation") }
+                            )
+                        }
+                    }
+
+                    composable("recommendation") {
+                        val user = currentUser
+                        if (user != null) {
+                            val viewModel: MealFoodiiViewModel = viewModel(
+                                factory = appContainer.mealModule.provideMealViewModelFactory()
+                            )
+                            RandomMealScreen(
+                                viewModel = viewModel,
+                                userId = user.id,
+                                onBackPressed = { navController.popBackStack() }
                             )
                         }
                     }
