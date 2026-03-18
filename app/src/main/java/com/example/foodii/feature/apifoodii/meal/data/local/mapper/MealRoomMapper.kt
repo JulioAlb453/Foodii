@@ -27,7 +27,8 @@ fun MealRoomEntity.toDomain(): FoodiiMeal {
         totalCalories = this.totalCalories,
         instructions = this.instructions,
         createdBy = this.createdBy,
-        ingredients = ingredients
+        ingredients = ingredients,
+        image = this.image
     )
 }
 
@@ -40,6 +41,7 @@ fun FoodiiMeal.toRoomEntity(): MealRoomEntity {
         totalCalories = this.totalCalories,
         instructions = this.instructions,
         createdBy = this.createdBy,
-        ingredientsJson = gson.toJson(this.ingredients)
+        ingredientsJson = gson.toJson(this.ingredients),
+        image = this.image
     )
 }

@@ -23,6 +23,7 @@ fun FoodiiMealDto.toDomain(): FoodiiMeal {
         totalCalories = (this.totalCalories ?: 0.0),
         instructions = this.instructions ?: "",
         createdBy = this.createdBy ?: "",
+        image = this.image,
         ingredients = this.ingredients?.map { it.toDomain() } ?: emptyList()
     )
 }
@@ -42,11 +43,12 @@ fun FoodiiMeal.toDto(): FoodiiMealDto {
         name = this.name,
         date = this.date.format(DateTimeFormatter.ISO_LOCAL_DATE),
         mealTime = this.mealTime.name.lowercase(Locale.ROOT),
+        ingredients = this.ingredients.map { it.toDto() },
         totalCalories = this.totalCalories,
         instructions = this.instructions,
         createdBy = this.createdBy,
         createdAt = null,
-        ingredients = this.ingredients.map { it.toDto() }
+        image = this.image
     )
 }
 

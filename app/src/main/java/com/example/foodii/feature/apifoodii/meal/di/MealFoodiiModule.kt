@@ -1,6 +1,8 @@
 package com.example.foodii.feature.apifoodii.meal.di
 
 import android.content.Context
+import com.example.foodii.core.hardware.domain.CameraManager
+import com.example.foodii.core.hardware.domain.ShakeDetector
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
@@ -16,7 +18,9 @@ class MealFoodiiModule(
     private val mealRepository: MealFoodiiRepository,
     private val ingredientRepository: IngredientRepository,
     private val plannerRepository: PlannerRepository,
-    private val context: Context
+    private val context: Context,
+    private val shakeDetector: ShakeDetector,
+    private val cameraManager: CameraManager
 ) {
 
     private fun provideGetMealsUseCase(): GetMealsUseCase {
@@ -57,7 +61,9 @@ class MealFoodiiModule(
             getFoodiiMealByIdUseCase = provideGetFoodiiMealByIdUseCase(),
             planMealUseCase = providePlanMealUseCase(),
             getPlannedMealsUseCase = provideGetPlannedMealsUseCase(),
-            context = context
+            context = context,
+            shakeDetector = shakeDetector,
+            cameraManager = cameraManager
         )
     }
 }

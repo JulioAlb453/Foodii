@@ -5,6 +5,8 @@ import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.mo
 import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.model.SingleIngredientResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.FoodiiMealResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.SingleMealResponse
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.http.*
 
 interface FoodiiAPI {
@@ -25,6 +27,17 @@ interface FoodiiAPI {
     @GET("api/meals/{id}")
     suspend fun getMealById(
         @Path("id") id: String
+    ): SingleMealResponse
+
+    @Multipart
+    @POST("api/meals")
+    suspend fun createMealAPI(
+        @Part("userId") userId: RequestBody,
+        @Part("name") name: RequestBody,
+        @Part("date") date: RequestBody,
+        @Part("mealTime") mealTime: RequestBody,
+        @Part("ingredients") ingredients: RequestBody,
+        @Part image: MultipartBody.Part?
     ): SingleMealResponse
 
     @GET("api/ingredients")

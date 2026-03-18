@@ -9,8 +9,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBasket
@@ -39,27 +40,28 @@ fun MealsListScreen(
     userId: String,
     onViewSummaryClick: () -> Unit,
     onIngredientsClick: () -> Unit,
+    onAddMealClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onMealClick: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+    val meals by viewModel.allMeals.collectAsState()
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { }
+    ) { _ -> }
 
-    FoodiiTheme( dynamicColor = false) {
-        val uiState by viewModel.uiState.collectAsState()
-        val meals by viewModel.allMeals.collectAsState()
-
-        LaunchedEffect(Unit) {
-            viewModel.loadAllMeals(userId)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
+    LaunchedEffect(Unit) {
+        viewModel.loadAllMeals(userId)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+    }
 
+    FoodiiTheme( dynamicColor = false) {
         Scaffold(
             containerColor = backgroundLight,
             topBar = {
@@ -78,39 +80,67 @@ fun MealsListScreen(
                             Icon(Icons.Default.CalendarMonth, contentDescription = "Ver Agenda", tint = onPrimaryDark)
                         }
                         IconButton(onClick = onLogoutClick) {
-                            Icon(Icons.Default.Logout, contentDescription = "Cerrar Sesión", tint = onPrimaryDark)
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar Sesión", tint = onPrimaryDark)
                         }
                     }
                 )
             },
-            floatingActionButtonPosition = FabPosition.Start,
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { viewModel.sendTestNotification(userId) },
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                ) {
-                    Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
+                Column(horizontalAlignment = Alignment.End) {
+                    SmallFloatingActionButton(
+                        onClick = { viewModel.sendTestNotification(userId) },
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
+                    }
+
+                    FloatingActionButton(
+                        onClick = onAddMealClick,
+                        containerColor = primaryDark,
+                        contentColor = onPrimaryDark
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Añadir Platillo")
+                    }
                 }
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                if (uiState.isLoading && meals.isEmpty()) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = primaryLight)
-                } else if (meals.isEmpty()) {
-                    Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Restaurant, contentDescription = null, modifier = Modifier.size(64.dp), tint = outlineLight)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("No hay platillos creados", color = outlineLight)
+                when {
+                    uiState.isLoading && meals.isEmpty() -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = primaryLight
+                        )
                     }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(meals) { meal ->
-                            MealItemCard(meal = meal, onClick = { onMealClick(meal.id) })
+                    meals.isEmpty() -> {
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Default.Restaurant,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = outlineLight
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("No hay platillos creados", color = outlineLight)
+                        }
+                    }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(meals) { meal ->
+                                MealItemCard(
+                                    meal = meal,
+                                    onClick = { onMealClick(meal.id) }
+                                )
+                            }
                         }
                     }
                 }
