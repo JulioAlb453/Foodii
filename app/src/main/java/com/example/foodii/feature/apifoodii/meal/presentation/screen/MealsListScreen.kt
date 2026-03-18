@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBasket
@@ -23,13 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.compose.FoodiiTheme
-import com.example.compose.backgroundLight
-import com.example.compose.onPrimaryDark
-import com.example.compose.onPrimaryLight
-import com.example.compose.outlineLight
-import com.example.compose.primaryDark
-import com.example.compose.primaryLight
+import com.example.compose.*
 import com.example.foodii.feature.apifoodii.meal.presentation.components.MealItemCard
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
 
@@ -42,7 +37,8 @@ fun MealsListScreen(
     onIngredientsClick: () -> Unit,
     onAddMealClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onMealClick: (String) -> Unit
+    onMealClick: (String) -> Unit,
+    onRandomDishClick: () -> Unit
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -97,6 +93,15 @@ fun MealsListScreen(
                     }
 
                     FloatingActionButton(
+                        onClick = onRandomDishClick,
+                        containerColor = secondaryDark,
+                        contentColor = onSecondaryDark,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Casino, contentDescription = "Platillo Aleatorio")
+                    }
+
+                    FloatingActionButton(
                         onClick = onAddMealClick,
                         containerColor = primaryDark,
                         contentColor = onPrimaryDark
@@ -107,17 +112,28 @@ fun MealsListScreen(
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                when {
-                    uiState.isLoading && meals.isEmpty() -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            color = primaryLight
-                        )
+                Column(modifier = Modifier.fillMaxSize()) {
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        onClick = onRandomDishClick,
+                        colors = CardDefaults.cardColors(containerColor = primaryLight)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Casino, contentDescription = null, tint = onPrimaryLight)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("¿No sabes qué comer? ¡Elige al azar!", color = onPrimaryLight, fontWeight = FontWeight.Bold)
+                        }
                     }
-                    meals.isEmpty() -> {
+
+                    if (meals.isEmpty() && !uiState.isLoading) {
                         Column(
-                            modifier = Modifier.align(Alignment.Center),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Icon(
                                 Icons.Default.Restaurant,
@@ -128,8 +144,7 @@ fun MealsListScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             Text("No hay platillos creados", color = outlineLight)
                         }
-                    }
-                    else -> {
+                    } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(16.dp),
@@ -143,6 +158,13 @@ fun MealsListScreen(
                             }
                         }
                     }
+                }
+                
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = primaryLight
+                    )
                 }
             }
         }

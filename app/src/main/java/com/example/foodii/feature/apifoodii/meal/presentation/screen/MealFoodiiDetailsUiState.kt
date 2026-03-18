@@ -7,5 +7,6 @@ data class MealFoodiiDetailsUiState (
     val isLoading: Boolean = false,
     val successData: FoodiiMeal? = null,
     val meals: List<MealDetail> = emptyList(),
-    val error: String? = null
-    )
+    val error: String? = null,
+    val randomMeal: FoodiiMeal? = null
+)

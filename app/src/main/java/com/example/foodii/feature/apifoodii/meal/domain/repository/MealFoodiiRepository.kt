@@ -11,4 +11,5 @@ interface MealFoodiiRepository {
     suspend fun saveMeal(meal: FoodiiMeal)
     suspend fun getMealById(id: String, userId: String): FoodiiMeal?
     suspend fun deleteMeal(id: String, userId: String)
+    suspend fun getRandomMeal(userId: String): Result<FoodiiMeal>
 }
