@@ -16,6 +16,7 @@ import com.example.foodii.feature.apifoodii.ingredient.domain.entity.Ingredient
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
+import com.example.foodii.feature.apifoodii.meal.domain.repository.ImageRepository
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRangeUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
@@ -27,6 +28,8 @@ import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.PlanMealUseCase
 import com.example.foodii.feature.mealdb.presentation.widget.MealReminderWidget
 import com.example.foodii.feature.mealdb.data.worker.SingleMealNotificationWorker
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -35,15 +38,18 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-class MealFoodiiViewModel(
+@HiltViewModel
+class MealFoodiiViewModel @Inject constructor(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
     private val getMealsByDateRangeUseCase: GetMealsByDateRangeUseCase,
     private val getMealsUseCase: GetMealsUseCase,
     private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase,
     private val planMealUseCase: PlanMealUseCase,
     private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
-    private val context: Context,
+    private val imageRepository: ImageRepository,
+    @ApplicationContext private val context: Context,
     val shakeDetector: ShakeDetector,
     val cameraManager: CameraManager
 ) : ViewModel() {
@@ -133,8 +139,24 @@ class MealFoodiiViewModel(
         _uiState.update { it.copy(isLoading = true, error = null, successData = null) }
         viewModelScope.launch {
             try {
-                val imagePath = imageUri?.toString()
-                val result = saveFoodiiMealUseCase(name, date, mealTime, ingredients, userId, imagePath)
+                var finalImageUrl: String? = null
+                if (imageUri != null) {
+                    Log.d("MealFoodiiViewModel", "Iniciando subida de imagen: $imageUri")
+                    val uploadResult = imageRepository.uploadImage(imageUri)
+                    uploadResult.fold(
+                        onSuccess = { url -> 
+                            Log.d("MealFoodiiViewModel", "Imagen subida con éxito: $url")
+                            finalImageUrl = url 
+                        },
+                        onFailure = { error -> 
+                            Log.e("MealFoodiiViewModel", "Error al subir imagen: ${error.message}", error)
+                            _uiState.update { it.copy(isLoading = false, error = "Error al subir imagen: ${error.message}") }
+                            return@launch 
+                        }
+                    )
+                }
+
+                val result = saveFoodiiMealUseCase(name, date, mealTime, ingredients, userId, finalImageUrl)
                 result.fold(
                     onSuccess = { meal ->
                         loadAllMeals(userId)
@@ -142,10 +164,11 @@ class MealFoodiiViewModel(
                         _uiState.update { it.copy(isLoading = false, successData = meal) }
                     },
                     onFailure = { error ->
-                        _uiState.update { it.copy(isLoading = false, error = error.message ?: "Error") }
+                        _uiState.update { it.copy(isLoading = false, error = error.message ?: "Error al guardar receta") }
                     }
                 )
             } catch (e: Exception) {
+                Log.e("MealFoodiiViewModel", "Excepción al guardar comida: ${e.message}", e)
                 _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
             }
         }

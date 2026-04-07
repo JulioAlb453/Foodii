@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "429971168030",
+    "project_id": "foodii-da681",
+    "storage_bucket": "foodii-da681.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:429971168030:android:5f726331e5cc769562870f",
+        "android_client_info": {
+          "package_name": "foodii.image.storage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARtftA2B9qniAQiWaSK81frVj6dldDNM4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

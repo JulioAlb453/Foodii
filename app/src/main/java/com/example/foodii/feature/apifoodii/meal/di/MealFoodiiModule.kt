@@ -5,6 +5,7 @@ import com.example.foodii.core.hardware.domain.CameraManager
 import com.example.foodii.core.hardware.domain.ShakeDetector
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
+import com.example.foodii.feature.apifoodii.meal.domain.repository.ImageRepository // Añadir import
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRangeUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
@@ -18,6 +19,7 @@ class MealFoodiiModule(
     private val mealRepository: MealFoodiiRepository,
     private val ingredientRepository: IngredientRepository,
     private val plannerRepository: PlannerRepository,
+    private val imageRepository: ImageRepository,
     private val context: Context,
     private val shakeDetector: ShakeDetector,
     private val cameraManager: CameraManager
@@ -61,6 +63,7 @@ class MealFoodiiModule(
             getFoodiiMealByIdUseCase = provideGetFoodiiMealByIdUseCase(),
             planMealUseCase = providePlanMealUseCase(),
             getPlannedMealsUseCase = provideGetPlannedMealsUseCase(),
+            imageRepository = imageRepository,
             context = context,
             shakeDetector = shakeDetector,
             cameraManager = cameraManager

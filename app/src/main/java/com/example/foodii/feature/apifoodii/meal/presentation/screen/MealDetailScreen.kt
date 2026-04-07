@@ -1,6 +1,7 @@
 package com.example.foodii.feature.apifoodii.meal.presentation.screen
 
 import android.util.Log
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,6 +9,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
@@ -84,11 +87,17 @@ fun MealDetailScreen(
                     color = primaryLight
                 )
             } else if (meal == null) {
-                Text(
-                    text = uiState.error ?: "No se pudo cargar la información",
+                Column(
                     modifier = Modifier.align(Alignment.Center),
-                    color = errorLight
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Default.Restaurant, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = if (uiState.error != null) "Error al cargar" else "No se pudo cargar la información",
+                        color = outlineLight
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -240,6 +249,36 @@ fun MealDetailScreen(
                     
                     item {
                         Spacer(modifier = Modifier.height(80.dp))
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = uiState.error != null,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter).padding(8.dp)
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = errorContainerLight),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Error, contentDescription = null, tint = errorLight)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = uiState.error ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = onErrorContainerLight,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { viewModel.clearError() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = errorLight)
+                        }
                     }
                 }
             }

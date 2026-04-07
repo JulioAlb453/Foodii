@@ -2,6 +2,7 @@ package com.example.foodii.core.di
 
 import android.content.Context
 import android.util.Log
+import com.cloudinary.android.MediaManager
 import com.example.foodii.BuildConfig
 import com.example.foodii.core.network.AuthInterceptor
 import com.example.foodii.core.network.FoodiiAPI
@@ -24,6 +25,10 @@ import com.example.foodii.feature.mealdb.data.datasource.api.MealDbApi
 import com.example.foodii.feature.mealdb.data.datasource.repositories.PlannerRepositoryImpl
 import com.example.foodii.feature.mealdb.data.local.database.FoodiiDatabase
 import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
+import com.example.foodii.core.utils.CloudinaryService
+import com.example.foodii.core.utils.CloudinaryServiceImpl
+import com.example.foodii.feature.apifoodii.meal.data.repositories.CloudinaryImageRepositoryImpl
+import com.example.foodii.feature.apifoodii.meal.domain.repository.ImageRepository
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -97,6 +102,25 @@ class AppContainer(context: Context) {
         AndroidCameraManager(context)
     }
 
+    private val mediaManager: MediaManager by lazy {
+        val config = mapOf(
+            "cloud_name" to BuildConfig.CLOUDINARY_CLOUD_NAME
+        )
+        try {
+            MediaManager.init(context, config)
+        } catch (e: Exception) {
+        }
+        MediaManager.get()
+    }
+
+    private val cloudinaryService: CloudinaryService by lazy {
+        CloudinaryServiceImpl(mediaManager)
+    }
+
+    val imageRepository: ImageRepository by lazy {
+        CloudinaryImageRepositoryImpl(cloudinaryService)
+    }
+
     val mealModule: MealFoodiiModule by lazy {
         MealFoodiiModule(
             mealRepository = foodiiRepository,
@@ -104,7 +128,8 @@ class AppContainer(context: Context) {
             plannerRepository = plannerRepository,
             context = context,
             shakeDetector = shakeDetector,
-            cameraManager = cameraManager
+            cameraManager = cameraManager,
+            imageRepository = imageRepository
         )
     }
 

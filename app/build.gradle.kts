@@ -27,6 +27,10 @@ android {
 
         buildConfigField("String", "BASE_URL", "\"https://www.themealdb.com/api/json/v1/1/\"")
         buildConfigField("String", "FOODII_BASE_URL", "\"http://52.206.95.157:3000/\"")
+        
+        // Cloudinary Config
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"duogqx5e3\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"foodii_preset\"")
     }
 
     buildTypes {
@@ -61,7 +65,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    
+
     // UI & Compose
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -72,30 +76,30 @@ dependencies {
     implementation(libs.androidx.compose.ui.text.google.fonts)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.icons.extended)
-    
+
     // Dependency Injection (Hilt)
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.work)
     ksp(libs.hilt.ext.compiler)
-    
+
     // Network (Retrofit & OkHttp)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
-    
+
     // Image Loading
     implementation(libs.io.coil.kt.coil.compose)
-    
+
     // Database (Room)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-    
+
     // Local Storage (DataStore)
     implementation(libs.androidx.datastore.preferences)
-    
+
     // Serialization & Utils
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.javax.inject)
@@ -116,5 +120,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-
+    // Cloudinary SDK
+    implementation("com.cloudinary:cloudinary-android:3.0.2")
 }

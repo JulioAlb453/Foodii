@@ -7,8 +7,9 @@ import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRep
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
 import java.time.LocalDate
 import java.util.UUID
+import javax.inject.Inject
 
-class SaveFoodiiMealUseCase(
+class SaveFoodiiMealUseCase @Inject constructor(
     private val mealRepository: MealFoodiiRepository,
     private val ingredientRepository: IngredientRepository
 ) {

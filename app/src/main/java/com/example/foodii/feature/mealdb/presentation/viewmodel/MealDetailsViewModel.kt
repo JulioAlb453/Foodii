@@ -53,4 +53,8 @@ class MealDetailsViewModel @Inject constructor(
             planMealUseCase(meal, dateMillis, userId)
         }
     }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
+    }
 }

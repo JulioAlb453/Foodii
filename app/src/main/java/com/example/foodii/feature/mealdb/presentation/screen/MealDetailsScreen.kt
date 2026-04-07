@@ -1,5 +1,7 @@
 package com.example.foodii.feature.mealdb.presentation.screen
 
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,11 +9,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,17 +65,11 @@ fun MealDetailsScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
                     color = primaryLight
-                )
-            } else if (uiState.error != null) {
-                Text(
-                    text = "Error: ${uiState.error}",
-                    modifier = Modifier.align(Alignment.Center),
-                    color = errorLight
                 )
             } else {
                 LazyColumn(
@@ -87,6 +86,41 @@ fun MealDetailsScreen(
                                 showDetails = true
                             }
                         )
+                    }
+                }
+            }
+
+            // Error Banner from top
+            AnimatedVisibility(
+                visible = uiState.error != null,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter)
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = errorContainerLight),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Error, contentDescription = null, tint = errorLight)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = uiState.error ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = onErrorContainerLight,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { /* Assuming there's a clearError in ViewModel if needed, but for now we just show it if error is present */ }) {
+                           Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = errorLight)
+                        }
                     }
                 }
             }

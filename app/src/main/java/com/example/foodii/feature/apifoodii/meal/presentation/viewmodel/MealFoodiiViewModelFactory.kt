@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.foodii.core.hardware.domain.CameraManager
 import com.example.foodii.core.hardware.domain.ShakeDetector
+import com.example.foodii.feature.apifoodii.meal.domain.repository.ImageRepository
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByIdUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRangeUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
@@ -19,6 +20,7 @@ class MealFoodiiViewModelFactory(
     private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase,
     private val planMealUseCase: PlanMealUseCase,
     private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
+    private val imageRepository: ImageRepository,
     private val context: Context,
     private val shakeDetector: ShakeDetector,
     private val cameraManager: CameraManager
@@ -34,6 +36,7 @@ class MealFoodiiViewModelFactory(
                 getFoodiiMealByIdUseCase = getFoodiiMealByIdUseCase,
                 planMealUseCase = planMealUseCase,
                 getPlannedMealsUseCase = getPlannedMealsUseCase,
+                imageRepository = imageRepository,
                 context = context,
                 shakeDetector = shakeDetector,
                 cameraManager = cameraManager

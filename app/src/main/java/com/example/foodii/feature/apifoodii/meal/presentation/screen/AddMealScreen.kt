@@ -6,6 +6,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.compose.*
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
@@ -40,10 +42,10 @@ fun AddMealScreen(
     var selectedTime by remember { mutableStateOf(FoodiiMealTime.LUNCH) }
     var showIngredientDialog by remember { mutableStateOf(false) }
     
-    val uiState by viewModel.uiState.collectAsState()
-    val selectedIngredients by viewModel.selectedIngredients.collectAsState()
-    val capturedImageUri by viewModel.capturedImageUri.collectAsState()
-    val ingredientUiState by ingredientViewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val selectedIngredients by viewModel.selectedIngredients.collectAsStateWithLifecycle()
+    val capturedImageUri by viewModel.capturedImageUri.collectAsStateWithLifecycle()
+    val ingredientUiState by ingredientViewModel.uiState.collectAsStateWithLifecycle()
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -197,15 +199,35 @@ fun AddMealScreen(
                 }
             }
 
-            uiState.error?.let { error ->
-                Snackbar(
-                    modifier = Modifier.padding(16.dp).align(Alignment.BottomCenter),
-                    action = {
-                        TextButton(onClick = { viewModel.clearError() }) {
-                            Text("Cerrar", color = MaterialTheme.colorScheme.inversePrimary)
+            // Error Banner from top with animation
+            AnimatedVisibility(
+                visible = uiState.error != null,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter).padding(8.dp)
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = errorContainerLight),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Error, contentDescription = null, tint = errorLight)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = uiState.error ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = onErrorContainerLight,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { viewModel.clearError() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = errorLight)
                         }
                     }
-                ) { Text(text = error) }
+                }
             }
         }
     }
