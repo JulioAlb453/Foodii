@@ -161,6 +161,7 @@ class MealFoodiiViewModel @Inject constructor(
                     onSuccess = { meal ->
                         loadAllMeals(userId)
                         clearForm()
+                        NotificationHelper.showMealAlert(context, "¡Comida Creada!", "Se ha registrado '${meal.name}' correctamente.", meal.id)
                         _uiState.update { it.copy(isLoading = false, successData = meal) }
                     },
                     onFailure = { error ->

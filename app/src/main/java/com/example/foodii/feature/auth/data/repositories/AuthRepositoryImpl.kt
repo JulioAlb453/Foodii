@@ -18,9 +18,9 @@ class AuthRepositoryImpl @Inject constructor(
 
     override val authState: Flow<User?> = localDataSource.getUser()
 
-    override suspend fun login(username: String, password: String): Result<User> {
+    override suspend fun login(username: String, password: String, fcmToken: String?): Result<User> {
         return try {
-            val response = api.login(LoginRequest(username, password))
+            val response = api.login(LoginRequest(username, password, fcmToken))
             val user = response.toDomain()
             
             if (user.token.isNullOrEmpty()) {
