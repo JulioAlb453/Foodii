@@ -3,11 +3,17 @@ package com.example.foodii.feature.apifoodii.meal.presentation.screen
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.compose.*
 import com.example.foodii.core.hardware.domain.ShakeDetector
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -15,7 +21,8 @@ fun MealScheduleComponent(
     shakeDetector: ShakeDetector,
     onDateSelected: (Long) -> Unit
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
+    val showDatePickerFlow = remember { MutableStateFlow(false) }
+    val showDatePicker by showDatePickerFlow.collectAsStateWithLifecycle()
     val datePickerState = rememberDatePickerState()
 
     if (showDatePicker) {
@@ -23,7 +30,7 @@ fun MealScheduleComponent(
             shakeDetector.startListening {
                 datePickerState.selectedDateMillis?.let {
                     onDateSelected(it)
-                    showDatePicker = false
+                    showDatePickerFlow.value = false
                 }
             }
             onDispose {
@@ -32,14 +39,14 @@ fun MealScheduleComponent(
         }
 
         DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { showDatePickerFlow.value = false },
             confirmButton = {
                 TextButton(
                     onClick = {
                         datePickerState.selectedDateMillis?.let {
                             onDateSelected(it)
                         }
-                        showDatePicker = false
+                        showDatePickerFlow.value = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = primaryLight)
                 ) {
@@ -48,7 +55,7 @@ fun MealScheduleComponent(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showDatePicker = false },
+                    onClick = { showDatePickerFlow.value = false },
                     colors = ButtonDefaults.textButtonColors(contentColor = outlineLight)
                 ) {
                     Text("Cancelar")
@@ -70,7 +77,7 @@ fun MealScheduleComponent(
     }
 
     ExtendedFloatingActionButton(
-        onClick = { showDatePicker = true },
+        onClick = { showDatePickerFlow.update { true } },
         containerColor = secondaryLight,
         contentColor = onSecondaryLight,
         elevation = FloatingActionButtonDefaults.elevation(8.dp),

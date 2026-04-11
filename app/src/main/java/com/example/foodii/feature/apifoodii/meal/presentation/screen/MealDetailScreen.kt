@@ -1,30 +1,26 @@
 package com.example.foodii.feature.apifoodii.meal.presentation.screen
 
-import android.util.Log
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
 import com.example.compose.*
-import com.example.foodii.core.utils.toFullImageUrl
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
 import com.example.ui.theme.TypographyFoodii
 import kotlinx.coroutines.launch
@@ -37,16 +33,14 @@ fun MealDetailScreen(
     userId: String,
     onBackPressed: () -> Unit
 ) {
-    val meal by viewModel.selectedMeal.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+    val meal by viewModel.selectedMeal.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(mealId) {
         viewModel.loadMealDetail(mealId, userId)
     }
-
-    val imageUrl = remember(meal?.image) { meal?.image.toFullImageUrl() }
 
     Scaffold(
         containerColor = backgroundLight,
@@ -61,7 +55,7 @@ fun MealDetailScreen(
                 title = { Text("Detalle del Platillo", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
@@ -87,52 +81,17 @@ fun MealDetailScreen(
                     color = primaryLight
                 )
             } else if (meal == null) {
-                Column(
+                Text(
+                    text = uiState.error ?: "No se pudo cargar la información",
                     modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(Icons.Default.Restaurant, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = if (uiState.error != null) "Error al cargar" else "No se pudo cargar la información",
-                        color = outlineLight
-                    )
-                }
+                    color = errorLight
+                )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(280.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
-                        ) {
-                            if (imageUrl.isNotEmpty()) {
-                                AsyncImage(
-                                    model = imageUrl,
-                                    contentDescription = "Meal Image",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Fit,
-                                    onState = { state ->
-                                        if (state is AsyncImagePainter.State.Error) {
-                                            Log.e("IMAGE_DEBUG", "Fallo al cargar: $imageUrl")
-                                        }
-                                    }
-                                )
-                            } else {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Restaurant, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
-                                }
-                            }
-                        }
-                    }
-
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -149,11 +108,15 @@ fun MealDetailScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Schedule, contentDescription = null, tint = onPrimaryLight, modifier = Modifier.size(20.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = onPrimaryLight,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    val timeText = meal!!.mealTime.name.lowercase().replaceFirstChar { it.uppercase() }
                                     Text(
-                                        text = timeText,
+                                        text = meal!!.mealTime.name.lowercase().replaceFirstChar { it.uppercase() },
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = onPrimaryLight
                                     )
@@ -246,39 +209,46 @@ fun MealDetailScreen(
                             }
                         }
                     }
+
+                    if (meal!!.steps.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Instrucciones",
+                                style = TypographyFoodii.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 8.dp),
+                                color = onBackgroundLight
+                            )
+                        }
+                        items(meal!!.steps.sortedBy { it.stepOrder }) { step ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = surfaceContainerLight),
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.FormatListNumbered,
+                                        contentDescription = null,
+                                        tint = primaryLight,
+                                        modifier = Modifier.padding(end = 12.dp)
+                                    )
+                                    Text(
+                                        text = "${step.stepOrder}. ${step.description}",
+                                        style = TypographyFoodii.bodyLarge,
+                                        color = onSurfaceLight
+                                    )
+                                }
+                            }
+                        }
+                    }
                     
                     item {
                         Spacer(modifier = Modifier.height(80.dp))
-                    }
-                }
-            }
-
-            AnimatedVisibility(
-                visible = uiState.error != null,
-                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
-                modifier = Modifier.align(Alignment.TopCenter).padding(8.dp)
-            ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = errorContainerLight),
-                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Error, contentDescription = null, tint = errorLight)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = uiState.error ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = onErrorContainerLight,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { viewModel.clearError() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = errorLight)
-                        }
                     }
                 }
             }

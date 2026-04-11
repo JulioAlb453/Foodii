@@ -6,7 +6,11 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -15,6 +19,15 @@ import androidx.compose.ui.unit.sp
 import com.example.foodii.feature.auth.presentation.components.AuthButton
 import com.example.foodii.feature.auth.presentation.components.AuthTextField
 import com.example.foodii.feature.auth.presentation.components.ErrorDialog
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+
+private data class RegisterFormState(
+    val username: String = "",
+    val password: String = "",
+    val confirmPassword: String = "",
+    val validationError: String? = null,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,12 +36,9 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var validationError by remember { mutableStateOf<String?>(null) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val formFlow = remember { MutableStateFlow(RegisterFormState()) }
+    val form by formFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -81,23 +91,23 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 AuthTextField(
-                    value = username,
-                    onValueChange = { username = it },
+                    value = form.username,
+                    onValueChange = { formFlow.update { s -> s.copy(username = it, validationError = null) } },
                     label = "Nombre de usuario",
                     icon = Icons.Default.Person
                 )
 
                 AuthTextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = form.password,
+                    onValueChange = { formFlow.update { s -> s.copy(password = it, validationError = null) } },
                     label = "Contraseña",
                     icon = Icons.Default.Lock,
                     isPassword = true
                 )
 
                 AuthTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
+                    value = form.confirmPassword,
+                    onValueChange = { formFlow.update { s -> s.copy(confirmPassword = it, validationError = null) } },
                     label = "Confirmar Contraseña",
                     icon = Icons.Default.Lock,
                     isPassword = true
@@ -108,14 +118,14 @@ fun RegisterScreen(
                 AuthButton(
                     text = "Registrarse",
                     onClick = {
-                        if (password != confirmPassword) {
-                            validationError = "Las contraseñas no coinciden"
+                        if (form.password != form.confirmPassword) {
+                            formFlow.update { it.copy(validationError = "Las contraseñas no coinciden") }
                         } else {
-                            viewModel.register(username, password)
+                            viewModel.register(form.username, form.password)
                         }
                     },
                     isLoading = uiState.isLoading,
-                    enabled = username.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty()
+                    enabled = form.username.isNotEmpty() && form.password.isNotEmpty() && form.confirmPassword.isNotEmpty()
                 )
             }
         }
@@ -128,11 +138,10 @@ fun RegisterScreen(
         )
     }
 
-    // Diálogo de error para validaciones locales (ej: contraseñas no coinciden)
-    validationError?.let { message ->
+    form.validationError?.let { message ->
         ErrorDialog(
             message = message,
-            onDismiss = { validationError = null }
+            onDismiss = { formFlow.update { it.copy(validationError = null) } }
         )
     }
 }

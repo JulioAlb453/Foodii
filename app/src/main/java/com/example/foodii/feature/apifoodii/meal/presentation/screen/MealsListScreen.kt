@@ -9,24 +9,35 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.compose.*
+import com.example.compose.FoodiiTheme
+import com.example.compose.backgroundLight
+import com.example.compose.onPrimaryDark
+import com.example.compose.onPrimaryLight
+import com.example.compose.outlineLight
+import com.example.compose.primaryDark
+import com.example.compose.primaryLight
+import com.example.foodii.feature.apifoodii.meal.presentation.components.CreateMealDialog
 import com.example.foodii.feature.apifoodii.meal.presentation.components.MealItemCard
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,29 +46,46 @@ fun MealsListScreen(
     userId: String,
     onViewSummaryClick: () -> Unit,
     onIngredientsClick: () -> Unit,
-    onAddMealClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onMealClick: (String) -> Unit,
-    onRandomDishClick: () -> Unit
+    onMealClick: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsState()
-    val meals by viewModel.allMeals.collectAsState()
-
+    
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { _ -> }
-
-    LaunchedEffect(Unit) {
-        viewModel.loadAllMeals(userId)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+    ) { isGranted ->
+        if (!isGranted) {
         }
     }
 
     FoodiiTheme( dynamicColor = false) {
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val meals by viewModel.allMeals.collectAsStateWithLifecycle()
+        val ingredientsForm by viewModel.ingredientsForMealForm.collectAsStateWithLifecycle()
+        val showCreateMealFlow = remember { MutableStateFlow(false) }
+        val showCreateMeal by showCreateMealFlow.collectAsStateWithLifecycle()
+
+        LaunchedEffect(showCreateMeal) {
+            if (showCreateMeal) {
+                viewModel.clearSuccessData()
+                viewModel.loadIngredientsForMealForm(userId)
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            viewModel.loadAllMeals(userId)
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
+
         Scaffold(
             containerColor = backgroundLight,
             topBar = {
@@ -69,71 +97,79 @@ fun MealsListScreen(
                     ),
                     title = { Text("Platillos Disponibles", fontWeight = FontWeight.Bold) },
                     actions = {
+                        IconButton(onClick = {
+                            viewModel.clearError()
+                            viewModel.clearSuccessData()
+                            showCreateMealFlow.value = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Nuevo platillo",
+                                tint = onPrimaryDark
+                            )
+                        }
                         IconButton(onClick = onIngredientsClick) {
-                            Icon(Icons.Default.ShoppingBasket, contentDescription = "Ingredientes", tint = onPrimaryDark)
+                            Icon(
+                                imageVector = Icons.Default.ShoppingBasket,
+                                contentDescription = "Ingredientes",
+                                tint = onPrimaryDark
+                            )
                         }
                         IconButton(onClick = onViewSummaryClick) {
-                            Icon(Icons.Default.CalendarMonth, contentDescription = "Ver Agenda", tint = onPrimaryDark)
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Ver Agenda",
+                                tint = onPrimaryDark
+                            )
                         }
                         IconButton(onClick = onLogoutClick) {
-                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar Sesión", tint = onPrimaryDark)
+                            Icon(
+                                imageVector = Icons.Default.Logout,
+                                contentDescription = "Cerrar Sesión",
+                                tint = onPrimaryDark
+                            )
                         }
                     }
                 )
             },
             floatingActionButton = {
-                Column(horizontalAlignment = Alignment.End) {
-                    SmallFloatingActionButton(
-                        onClick = { viewModel.sendTestNotification(userId) },
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    ) {
-                        Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
-                    }
-
-                    FloatingActionButton(
-                        onClick = onRandomDishClick,
-                        containerColor = secondaryDark,
-                        contentColor = onSecondaryDark,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    ) {
-                        Icon(Icons.Default.Casino, contentDescription = "Platillo Aleatorio")
-                    }
-
-                    FloatingActionButton(
-                        onClick = onAddMealClick,
-                        containerColor = primaryDark,
-                        contentColor = onPrimaryDark
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Añadir Platillo")
-                    }
+                FloatingActionButton(
+                    onClick = { viewModel.sendTestNotification(userId) },
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ) {
+                    Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
                 }
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        onClick = onRandomDishClick,
-                        colors = CardDefaults.cardColors(containerColor = primaryLight)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Casino, contentDescription = null, tint = onPrimaryLight)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text("¿No sabes qué comer? ¡Elige al azar!", color = onPrimaryLight, fontWeight = FontWeight.Bold)
-                        }
+                CreateMealDialog(
+                    show = showCreateMeal,
+                    ingredientsCatalog = ingredientsForm,
+                    isLoading = uiState.isLoading,
+                    errorMessage = uiState.error,
+                    successData = uiState.successData,
+                    onDismiss = { showCreateMealFlow.value = false },
+                    onClearError = { viewModel.clearError() },
+                    onConsumedSuccess = {
+                        viewModel.clearSuccessData()
+                        viewModel.loadAllMeals(userId)
+                    },
+                    onSave = { name, date, mealTime, ing, steps ->
+                        viewModel.saveMeal(name, date, mealTime, ing, steps, userId)
+                    },
+                )
+                when {
+                    uiState.isLoading && meals.isEmpty() -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = primaryLight
+                        )
                     }
-
-                    if (meals.isEmpty() && !uiState.isLoading) {
+                    meals.isEmpty() -> {
                         Column(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(
                                 Icons.Default.Restaurant,
@@ -142,9 +178,13 @@ fun MealsListScreen(
                                 tint = outlineLight
                             )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("No hay platillos creados", color = outlineLight)
+                            Text(
+                                "No hay platillos creados",
+                                color = outlineLight
+                            )
                         }
-                    } else {
+                    }
+                    else -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(16.dp),
@@ -158,13 +198,6 @@ fun MealsListScreen(
                             }
                         }
                     }
-                }
-                
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = primaryLight
-                    )
                 }
             }
         }

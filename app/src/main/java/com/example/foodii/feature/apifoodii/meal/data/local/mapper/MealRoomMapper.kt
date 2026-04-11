@@ -3,6 +3,7 @@ package com.example.foodii.feature.apifoodii.meal.data.local.mapper
 import com.example.foodii.feature.apifoodii.meal.data.local.entity.MealRoomEntity
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealIngredient
+import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealStep
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -15,7 +16,14 @@ fun MealRoomEntity.toDomain(): FoodiiMeal {
     val ingredientsType = object : TypeToken<List<FoodiiMealIngredient>>() {}.type
     val ingredients: List<FoodiiMealIngredient> = try {
         gson.fromJson(this.ingredientsJson, ingredientsType)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    val stepsType = object : TypeToken<List<FoodiiMealStep>>() {}.type
+    val steps: List<FoodiiMealStep> = try {
+        gson.fromJson(this.stepsJson, stepsType) ?: emptyList()
+    } catch (_: Exception) {
         emptyList()
     }
 
@@ -25,10 +33,10 @@ fun MealRoomEntity.toDomain(): FoodiiMeal {
         date = LocalDate.parse(this.date, DateTimeFormatter.ISO_LOCAL_DATE),
         mealTime = FoodiiMealTime.fromString(this.mealTime),
         totalCalories = this.totalCalories,
-        instructions = this.instructions,
         createdBy = this.createdBy,
+        steps = steps,
+        image = this.image,
         ingredients = ingredients,
-        image = this.image
     )
 }
 
@@ -39,9 +47,9 @@ fun FoodiiMeal.toRoomEntity(): MealRoomEntity {
         date = this.date.format(DateTimeFormatter.ISO_LOCAL_DATE),
         mealTime = this.mealTime.name,
         totalCalories = this.totalCalories,
-        instructions = this.instructions,
+        stepsJson = gson.toJson(this.steps),
+        image = this.image,
         createdBy = this.createdBy,
         ingredientsJson = gson.toJson(this.ingredients),
-        image = this.image
     )
 }

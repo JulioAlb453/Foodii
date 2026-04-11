@@ -8,7 +8,6 @@ import com.example.foodii.feature.apifoodii.ingredient.data.local.dao.Ingredient
 import com.example.foodii.feature.apifoodii.ingredient.data.local.entity.IngredientRoomEntity
 import com.example.foodii.feature.apifoodii.ingredient.domain.entity.Ingredient
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
-import com.google.gson.Gson
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
@@ -18,7 +17,6 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
 ) : IngredientRepository {
 
     private val TAG = "IngredientRepository"
-    private val gson = Gson()
 
     override suspend fun getAllIngredients(userId: String): List<Ingredient> {
         try {
@@ -27,7 +25,10 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
                 Log.d(TAG, "Sincronizando ${response.ingredients.size} ingredientes para userId: $userId")
                 val entities = response.ingredients.map { dto ->
                     val domain = dto.toDomain()
+                    
+                    // CORRECCIÓN: Si el servidor no envía createdBy, usamos el userId de la petición
                     val finalCreatedBy = if (domain.createdBy.isEmpty()) userId else domain.createdBy
+                    
                     IngredientRoomEntity(
                         id = domain.id,
                         name = domain.name,
@@ -44,6 +45,7 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
 
         return try {
             val localEntities = ingredientDao.getAllIngredients(userId).first()
+            Log.d(TAG, "Encontrados localmente para $userId: ${localEntities.size} ingredientes")
             localEntities.map { entity ->
                 Ingredient(
                     id = entity.id,
@@ -54,6 +56,7 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
                 )
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Error al leer ingredientes de Room: ${e.message}")
             emptyList()
         }
     }
@@ -73,6 +76,7 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
         return try {
             val response = api.getIngredientByIdAPI(id = id)
             response.ingredient?.toDomain()?.also { domain ->
+                // CORRECCIÓN: También aquí aseguramos el createdBy
                 val finalCreatedBy = if (domain.createdBy.isEmpty()) userId else domain.createdBy
                 ingredientDao.insertIngredient(
                     IngredientRoomEntity(
@@ -91,37 +95,24 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
 
     override suspend fun createIngredient(ingredient: Ingredient, userId: String): Result<Unit> {
         return try {
+            // Aseguramos que el ingrediente tenga el userId antes de mandarlo/guardarlo
             val ingredientWithUser = if (ingredient.createdBy.isEmpty()) ingredient.copy(createdBy = userId) else ingredient
-            val dto = ingredientWithUser.toDto()
-            
-            Log.d(TAG, "Iniciando POST /api/ingredients")
-            Log.d(TAG, "Body enviado: ${gson.toJson(dto)}")
-
-            val response = api.createIngredientAPI(ingredient = dto)
-            
-            Log.d(TAG, "Respuesta recibida (success: ${response.success})")
-            Log.d(TAG, "Data recibida: ${gson.toJson(response.ingredient)}")
-
+            val response = api.updateIngredientAPI(id = ingredientWithUser.id, ingredient = ingredientWithUser.toDto())
             if (response.success == true) {
-                val createdIngredient = response.ingredient?.toDomain() ?: ingredientWithUser
                 ingredientDao.insertIngredient(
                     IngredientRoomEntity(
-                        id = createdIngredient.id,
-                        name = createdIngredient.name,
-                        caloriesPer100g = createdIngredient.caloriesPer100g,
-                        createdBy = userId,
-                        createdAt = createdIngredient.createdAt?.time ?: System.currentTimeMillis()
+                        id = ingredientWithUser.id,
+                        name = ingredientWithUser.name,
+                        caloriesPer100g = ingredientWithUser.caloriesPer100g,
+                        createdBy = ingredientWithUser.createdBy,
+                        createdAt = ingredientWithUser.createdAt?.time
                     )
                 )
-                Log.d(TAG, "Ingrediente guardado en base de datos local exitosamente")
                 Result.success(Unit)
             } else {
-                Log.e(TAG, "El servidor devolvió success=false en la creación")
                 Result.failure(Exception("Error al crear ingrediente"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error fatal en POST /api/ingredients: ${e.message}")
-            e.printStackTrace()
             Result.failure(e)
         }
     }

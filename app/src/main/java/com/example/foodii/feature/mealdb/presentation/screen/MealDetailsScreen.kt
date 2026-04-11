@@ -1,7 +1,5 @@
 package com.example.foodii.feature.mealdb.presentation.screen
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,14 +7,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,6 +26,14 @@ import com.example.foodii.feature.mealdb.domain.entity.MealDetail
 import com.example.foodii.feature.mealdb.presentation.components.MealCard
 import com.example.foodii.feature.mealdb.presentation.components.ScheduleMealDialog
 import com.example.foodii.feature.mealdb.presentation.viewmodel.MealDetailsViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+
+private data class MealDetailsSheetState(
+    val selectedMeal: MealDetail? = null,
+    val showDetails: Boolean = false,
+    val showDatePicker: Boolean = false,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,11 +42,10 @@ fun MealDetailsScreen(
     onNavigateToPlanner: () -> Unit
 ) {
     val viewModel: MealDetailsViewModel = hiltViewModel()
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var selectedMeal by remember { mutableStateOf<MealDetail?>(null) }
-    var showDetails by remember { mutableStateOf(false) }
-    var showDatePicker by remember { mutableStateOf(false) }
+    val sheetStateFlow = remember { MutableStateFlow(MealDetailsSheetState()) }
+    val sheetState by sheetStateFlow.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = backgroundLight,
@@ -65,11 +70,17 @@ fun MealDetailsScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Box(modifier = Modifier.padding(padding)) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
                     color = primaryLight
+                )
+            } else if (uiState.error != null) {
+                Text(
+                    text = "Error: ${uiState.error}",
+                    modifier = Modifier.align(Alignment.Center),
+                    color = errorLight
                 )
             } else {
                 LazyColumn(
@@ -82,53 +93,23 @@ fun MealDetailsScreen(
                             name = meal.name,
                             imageUrl = meal.imageUrl,
                             onClick = {
-                                selectedMeal = meal
-                                showDetails = true
+                                sheetStateFlow.update {
+                                    it.copy(selectedMeal = meal, showDetails = true)
+                                }
                             }
                         )
-                    }
-                }
-            }
-
-            // Error Banner from top
-            AnimatedVisibility(
-                visible = uiState.error != null,
-                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
-                modifier = Modifier.align(Alignment.TopCenter)
-            ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = errorContainerLight),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Error, contentDescription = null, tint = errorLight)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = uiState.error ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = onErrorContainerLight,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { /* Assuming there's a clearError in ViewModel if needed, but for now we just show it if error is present */ }) {
-                           Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = errorLight)
-                        }
                     }
                 }
             }
         }
     }
 
-    if (showDetails && selectedMeal != null) {
-        Dialog(onDismissRequest = { showDetails = false }) {
+    // Diálogo de Detalles
+    if (sheetState.showDetails && sheetState.selectedMeal != null) {
+        val selectedMeal = sheetState.selectedMeal!!
+        Dialog(onDismissRequest = {
+            sheetStateFlow.update { it.copy(showDetails = false) }
+        }) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,7 +119,7 @@ fun MealDetailsScreen(
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     AsyncImage(
-                        model = selectedMeal!!.imageUrl,
+                        model = selectedMeal.imageUrl,
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -152,7 +133,7 @@ fun MealDetailsScreen(
                             .verticalScroll(rememberScrollState())
                     ) {
                         Text(
-                            text = selectedMeal!!.name,
+                            text = selectedMeal.name,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = primaryLight
@@ -165,7 +146,7 @@ fun MealDetailsScreen(
                             color = onSurfaceVariantLight
                         )
                         Text(
-                            text = selectedMeal!!.instructions,
+                            text = selectedMeal.instructions,
                             style = MaterialTheme.typography.bodyMedium,
                             color = onSurfaceLight
                         )
@@ -177,15 +158,18 @@ fun MealDetailsScreen(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(
-                            onClick = { showDetails = false },
+                            onClick = {
+                                sheetStateFlow.update { it.copy(showDetails = false) }
+                            },
                             colors = ButtonDefaults.textButtonColors(contentColor = primaryLight)
                         ) {
                             Text("Cerrar")
                         }
                         Button(
                             onClick = {
-                                showDetails = false
-                                showDatePicker = true
+                                sheetStateFlow.update {
+                                    it.copy(showDetails = false, showDatePicker = true)
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = primaryLight,
@@ -200,12 +184,16 @@ fun MealDetailsScreen(
         }
     }
 
-    if (showDatePicker && selectedMeal != null) {
+    // Diálogo de Calendario
+    if (sheetState.showDatePicker && sheetState.selectedMeal != null) {
+        val mealForSchedule = sheetState.selectedMeal!!
         ScheduleMealDialog(
-            onDismiss = { showDatePicker = false },
+            onDismiss = {
+                sheetStateFlow.update { it.copy(showDatePicker = false) }
+            },
             onConfirm = { millis ->
-                selectedMeal?.let { viewModel.onPlanMealSelected(it, millis) }
-                showDatePicker = false
+                viewModel.onPlanMealSelected(mealForSchedule, millis)
+                sheetStateFlow.update { it.copy(showDatePicker = false) }
             }
         )
     }

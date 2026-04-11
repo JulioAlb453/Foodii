@@ -3,21 +3,31 @@ package com.example.foodii.feature.apifoodii.ingredient.presentation.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.compose.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+
+private data class CreateIngredientFormState(
+    val name: String = "",
+    val calories: String = "",
+    val error: String? = null,
+)
 
 @Composable
 fun CreateIngredientDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, Double) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var calories by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
+    val formFlow = remember { MutableStateFlow(CreateIngredientFormState()) }
+    val form by formFlow.collectAsStateWithLifecycle()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -35,10 +45,9 @@ fun CreateIngredientDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { 
-                        name = it
-                        error = null
+                    value = form.name,
+                    onValueChange = {
+                        formFlow.update { s -> s.copy(name = it, error = null) }
                     },
                     label = { Text("Nombre del ingrediente") },
                     modifier = Modifier.fillMaxWidth(),
@@ -50,11 +59,10 @@ fun CreateIngredientDialog(
                 )
 
                 OutlinedTextField(
-                    value = calories,
-                    onValueChange = { 
+                    value = form.calories,
+                    onValueChange = {
                         if (it.isEmpty() || it.toDoubleOrNull() != null) {
-                            calories = it
-                            error = null
+                            formFlow.update { s -> s.copy(calories = it, error = null) }
                         }
                     },
                     label = { Text("Calorías por 100g") },
@@ -67,9 +75,9 @@ fun CreateIngredientDialog(
                     )
                 )
 
-                if (error != null) {
+                if (form.error != null) {
                     Text(
-                        text = error!!,
+                        text = form.error!!,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -79,13 +87,13 @@ fun CreateIngredientDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val calValue = calories.toDoubleOrNull()
-                    if (name.isBlank()) {
-                        error = "El nombre no puede estar vacío"
+                    val calValue = form.calories.toDoubleOrNull()
+                    if (form.name.isBlank()) {
+                        formFlow.update { it.copy(error = "El nombre no puede estar vacío") }
                     } else if (calValue == null) {
-                        error = "Ingresa un número válido para las calorías"
+                        formFlow.update { it.copy(error = "Ingresa un número válido para las calorías") }
                     } else {
-                        onConfirm(name, calValue)
+                        onConfirm(form.name, calValue)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = primaryLight)

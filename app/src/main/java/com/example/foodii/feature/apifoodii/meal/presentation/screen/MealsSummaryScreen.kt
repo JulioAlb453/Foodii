@@ -7,7 +7,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -25,8 +28,8 @@ fun MealsSummaryScreen(
     onNavigateToDetail: (String) -> Unit
 ) {
     FoodiiTheme(darkTheme = false, dynamicColor = false) {
-        val uiState by viewModel.uiState.collectAsState()
-        val summaries by viewModel.summaries.collectAsState()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val summaries by viewModel.summaries.collectAsStateWithLifecycle()
 
         LaunchedEffect(Unit) {
             viewModel.loadMealsRange(userId, "2023-01-01", "2025-12-31")

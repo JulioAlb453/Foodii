@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -22,8 +25,8 @@ fun RandomMealScreen(
     onBackPressed: () -> Unit
 ) {
 
-    val allMeals by viewModel.allMeals.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+    val allMeals by viewModel.allMeals.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
 
     LaunchedEffect(Unit) {
