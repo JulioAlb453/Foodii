@@ -9,11 +9,17 @@ interface AuthApi {
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
     @POST("/api/auth/register")
-    suspend fun register(@Body request: LoginRequest): AuthResponse
+    suspend fun register(@Body request: RegisterRequest): AuthResponse
 }
 
 
 data class LoginRequest(
     val username: String,
     val password: String
+)
+
+data class RegisterRequest(
+    val username: String,
+    val password: String,
+    val notificationCategoryPreferences: List<String>? = null
 )

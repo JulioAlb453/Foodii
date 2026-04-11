@@ -27,17 +27,23 @@ import com.example.foodii.feature.auth.presentation.AuthViewModel
 import com.example.foodii.feature.auth.presentation.AuthViewModelFactory
 import com.example.foodii.feature.auth.presentation.LoginScreen
 import com.example.foodii.feature.auth.presentation.RegisterScreen
+import com.example.foodii.feature.food_preferences.presentation.FoodPreferencesScreen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var authLocalDataSource: AuthLocalDataSource
 
     lateinit var appContainer: AppContainer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        appContainer = AppContainer(this)
+        appContainer = AppContainer(this, authLocalDataSource)
 
         enableEdgeToEdge()
         setContent {
@@ -74,9 +80,18 @@ class MainActivity : ComponentActivity() {
                         )
 
                         LaunchedEffect(currentUser) {
-                            if (currentUser != null && widgetMealId.isNullOrEmpty()) {
-                                navController.navigate("meals_list") {
-                                    popUpTo("login") { inclusive = true }
+                            val user = currentUser
+                            android.util.Log.d("AUTH_DEBUG", "currentUser: $user")
+                            android.util.Log.d("AUTH_DEBUG", "prefs: ${user?.notificationCategoryPreferences}")
+                            if (user != null && widgetMealId.isNullOrEmpty()) {
+                                if (user.notificationCategoryPreferences.isNullOrEmpty()) {
+                                    navController.navigate("food_preferences_screen") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate("meals_list") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 }
                             }
                         }
@@ -98,8 +113,22 @@ class MainActivity : ComponentActivity() {
                         )
                         RegisterScreen(
                             viewModel = viewModel,
-                            onRegisterSuccess = { navController.navigateUp() },
+                            onRegisterSuccess = {
+                                navController.navigate("login") {
+                                    popUpTo("register") { inclusive = true }
+                                }
+                            },
                             onNavigateBack = { navController.navigateUp() }
+                        )
+                    }
+
+                    composable("food_preferences_screen") {
+                        FoodPreferencesScreen(
+                            onNavigateToHome = {
+                                navController.navigate("meals_list") {
+                                    popUpTo("food_preferences_screen") { inclusive = true }
+                                }
+                            }
                         )
                     }
 

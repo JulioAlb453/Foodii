@@ -11,13 +11,15 @@ import com.example.foodii.feature.apifoodii.meal.data.local.entity.MealRoomEntit
 import com.example.foodii.feature.mealdb.data.local.dao.PlannedMealDao
 import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
 
-@Database(entities = [
-    PlannedMealEntity::class,
-    MealRoomEntity::class,
-    IngredientRoomEntity::class],
-    version = 6, // Incrementado a 6
-    exportSchema = false)
-
+@Database(
+    entities = [
+        PlannedMealEntity::class,
+        MealRoomEntity::class,
+        IngredientRoomEntity::class
+    ],
+    version = 8, // Incrementado por eliminación de food_categories
+    exportSchema = false
+)
 abstract class FoodiiDatabase : RoomDatabase() {
 
     abstract fun plannedMealDao(): PlannedMealDao
