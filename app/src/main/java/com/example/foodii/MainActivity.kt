@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -32,6 +31,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
+import com.example.foodii.core.service.worker.WidgetUpdateWorker
+import androidx.work.OneTimeWorkRequestBuilder //Ocupado para la presentación en clase
+import androidx.work.WorkManager //Ocupado para la presentación en clase
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -44,6 +46,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appContainer = AppContainer(this, authLocalDataSource)
+        WidgetUpdateWorker.schedule(this)
+        val testRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build() //Ocupado para la presentación en clase
+        WorkManager.getInstance(this).enqueue(testRequest)  //Ocupado para la presentación en clase
 
         enableEdgeToEdge()
         setContent {

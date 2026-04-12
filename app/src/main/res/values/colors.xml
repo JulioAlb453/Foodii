@@ -7,4 +7,8 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="morning_color">#FFE0B2</color>
+    <color name="afternoon_color">#FFCC80</color>
+    <color name="night_color">#2C2C54</color>
+    <color name="widget_overlay">#66000000</color>
 </resources>

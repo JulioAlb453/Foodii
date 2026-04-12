@@ -2,44 +2,32 @@ package com.example.foodii.feature.mealdb.presentation.widget
 
 import android.content.Context
 import android.content.Intent
-import androidx.compose.runtime.*
+import android.graphics.BitmapFactory
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import androidx.glance.GlanceId
-import androidx.glance.GlanceModifier
-import androidx.glance.Image
+import androidx.glance.*
 import androidx.glance.action.clickable
-import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.*
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.appWidgetBackground
-import androidx.glance.appwidget.cornerRadius
-import androidx.glance.appwidget.provideContent
-import androidx.glance.background
 import androidx.glance.layout.*
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
+import androidx.glance.text.*
+import androidx.glance.unit.ColorProvider
 import com.example.foodii.R
-import com.example.compose.primaryLight
-import com.example.compose.surfaceVariantLight
 import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
 import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
 import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
+import com.example.foodii.core.service.worker.WidgetUpdateWorker
 import com.example.foodii.MainActivity
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.firstOrNull
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.glance.ImageProvider
-import androidx.glance.color.ColorProvider
-import androidx.glance.text.TextStyle
-import com.example.compose.primaryDark
-import com.example.ui.theme.TypographyFoodii
-import kotlinx.coroutines.flow.firstOrNull
-
 
 class MealReminderWidget : GlanceAppWidget() {
 
@@ -53,7 +41,11 @@ class MealReminderWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appContext = context.applicationContext
-        val entryPoint = EntryPointAccessors.fromApplication(appContext, WidgetEntryPoint::class.java)
+        val entryPoint = EntryPointAccessors.fromApplication(
+            appContext,
+            WidgetEntryPoint::class.java
+        )
+
         val repository = entryPoint.plannerRepository()
         val authDataSource = entryPoint.authLocalDataSource()
         val mealRepository = entryPoint.mealRepository()
@@ -67,55 +59,82 @@ class MealReminderWidget : GlanceAppWidget() {
         } else {
             emptyList()
         }
-        
+
         val nextPlanned = plannedMeals.firstOrNull()
         val fullMealDetail = nextPlanned?.let { mealRepository.getMealById(it.mealId, userId) }
 
-        // Creamos el intent con el ID de la comida
         val intent = Intent(context, MainActivity::class.java).apply {
             putExtra("mealId", nextPlanned?.mealId)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val timeOfDay = when (hour) {
+            in 6..11 -> "morning"
+            in 12..18 -> "afternoon"
+            else -> "night"
+        }
+
+        val imageFile = File(context.filesDir, "widget_image_$timeOfDay.png")
+        val bitmap = if (imageFile.exists()) {
+            BitmapFactory.decodeFile(imageFile.absolutePath)
+        } else null
+
         provideContent {
-            WidgetContent(nextPlanned, fullMealDetail, intent)
+            WidgetContent(
+                planned = nextPlanned,
+                detail = fullMealDetail,
+                intent = intent,
+                bitmap = bitmap,
+                timeOfDay = timeOfDay
+            )
         }
     }
 
     @Composable
-    private fun WidgetContent(planned: PlannedMealEntity?, detail: FoodiiMeal?, intent: Intent) {
+    private fun WidgetContent(
+        planned: PlannedMealEntity?,
+        detail: FoodiiMeal?,
+        intent: Intent,
+        bitmap: android.graphics.Bitmap?,
+        timeOfDay: String
+    ) {
+        val backgroundColorRes = when (timeOfDay) {
+            "morning" -> R.color.morning_color
+            "afternoon" -> R.color.afternoon_color
+            else -> R.color.night_color
+        }
+
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .appWidgetBackground()
-                .background(surfaceVariantLight)
+                .background(backgroundColorRes)
                 .cornerRadius(16.dp)
-                .clickable(actionStartActivity(intent)) // Ahora enviamos el intent con extras
+                .clickable(actionStartActivity(intent))
         ) {
-            Image(
-                provider = ImageProvider(R.drawable.bg_widget_wave),
-                contentDescription = null,
-                modifier = GlanceModifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds
-            )
+            bitmap?.let {
+                Image(
+                    provider = ImageProvider(it),
+                    contentDescription = null,
+                    modifier = GlanceModifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .background(R.color.widget_overlay)
+            ) {}
 
             Row(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(16.dp),
                 verticalAlignment = Alignment.Vertical.CenterVertically
             ) {
-                Image(
-                    provider = ImageProvider(R.drawable.icon_foodii),
-                    contentDescription = "Food Icon",
-                    modifier = GlanceModifier.size(36.dp)
-                )
-
-                Spacer(modifier = GlanceModifier.width(16.dp))
-
                 Column(
-                    modifier = GlanceModifier.defaultWeight(),
-                    verticalAlignment = Alignment.Vertical.CenterVertically
+                    modifier = GlanceModifier.defaultWeight()
                 ) {
                     if (planned != null) {
                         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
@@ -125,35 +144,30 @@ class MealReminderWidget : GlanceAppWidget() {
                             text = planned.name,
                             maxLines = 1,
                             style = TextStyle(
-                                fontSize = TypographyFoodii.titleLarge.fontSize,
                                 fontWeight = FontWeight.Bold,
-                                color = ColorProvider(day = primaryLight, night = primaryLight)
+                                color = ColorProvider(R.color.white)
                             )
                         )
 
-                        val instructions = detail?.instructions ?: "Toca para ver la receta"
                         Text(
-                            text = instructions,
+                            text = detail?.instructions ?: "Toca para ver la receta",
                             maxLines = 1,
                             style = TextStyle(
-                                fontSize = TypographyFoodii.bodySmall.fontSize,
-                                color = ColorProvider(day = primaryLight.copy(alpha = 0.7f), night = primaryLight)
+                                color = ColorProvider(R.color.white)
                             )
                         )
 
                         Text(
                             text = "Próxima comida • $dateString",
                             style = TextStyle(
-                                color = ColorProvider(day = primaryLight, night = primaryLight),
-                                fontSize = TypographyFoodii.bodySmall.fontSize,
+                                color = ColorProvider(R.color.white)
                             )
                         )
                     } else {
                         Text(
                             text = "Sin comidas agendadas",
                             style = TextStyle(
-                                fontSize = TypographyFoodii.bodyMedium.fontSize,
-                                color = ColorProvider(day = primaryLight, night = primaryDark),
+                                color = ColorProvider(R.color.white)
                             )
                         )
                     }
