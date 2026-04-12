@@ -49,4 +49,5 @@ data class CreateMealRequestDto(
     @SerializedName("mealTime") val mealTime: String,
     @SerializedName("ingredients") val ingredients: List<CreateMealIngredientPayloadDto>,
     @SerializedName("steps") val steps: List<String>,
+    @SerializedName("image") val image: String? // Añadido campo image
 )

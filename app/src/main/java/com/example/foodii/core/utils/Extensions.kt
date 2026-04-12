@@ -12,6 +12,7 @@ fun String?.toFullImageUrl(): String {
         this.startsWith("http") -> this
         this.startsWith("content://") -> this
         this.startsWith("file://") -> this
+        this.contains("cloudinary") -> this
         else -> {
             val cleanPath = if (this.startsWith("/")) this else "/$this"
             "${BuildConfig.FOODII_BASE_URL.removeSuffix("/")}$cleanPath"

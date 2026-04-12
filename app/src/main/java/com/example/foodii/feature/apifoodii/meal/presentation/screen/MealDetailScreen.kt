@@ -22,11 +22,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.compose.*
+import com.example.foodii.core.utils.toFullImageUrl
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
 import com.example.ui.theme.TypographyFoodii
 import kotlinx.coroutines.launch
@@ -98,6 +101,27 @@ fun MealDetailScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    // SECCIÓN DE IMAGEN
+                    val imageUrl = meal!!.image.toFullImageUrl()
+                    if (imageUrl.isNotEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+                            ) {
+                                AsyncImage(
+                                    model = imageUrl,
+                                    contentDescription = meal!!.name,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -243,7 +267,6 @@ fun MealDetailScreen(
                             val pageCount = (sortedSteps.size + stepsPerPage - 1) / stepsPerPage
                             val pagerState = rememberPagerState(pageCount = { pageCount })
                             
-                            // Efecto de sacudida para cambiar de página
                             DisposableEffect(Unit) {
                                 viewModel.shakeDetector.startListening {
                                     scope.launch {

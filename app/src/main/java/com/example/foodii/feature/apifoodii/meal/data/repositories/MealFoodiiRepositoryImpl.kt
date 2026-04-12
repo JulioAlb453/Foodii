@@ -29,30 +29,39 @@ class MealFoodiiRepositoryImpl @Inject constructor(
     override fun findAll(userId: String): Flow<List<FoodiiMeal>> = flow {
         Log.d("REPOSITORY", "Buscando todos los platillos")
         
-        // 1. Emitir lo que ya está en Room (Sin filtrar por userId)
-        try {
-            val localMeals = mealDao.getAllMeals().firstOrNull() ?: emptyList()
-            emit(localMeals.map { it.toDomain() })
-        } catch (e: Exception) {
-            Log.e("REPOSITORY", "Error al leer local: ${e.message}")
-        }
+        // 1. Emitir lo que ya está en Room
+        val localInitial = mealDao.getAllMeals().firstOrNull() ?: emptyList()
+        emit(localInitial.map { it.toDomain() })
 
-        // 2. Sincronizar
+        // 2. Sincronizar protegiendo imágenes locales
         try {
             val response = api.getMealsAPI()
             if (response.success == true && response.meals != null) {
-                val roomEntities = response.meals.map { it.toDomainFromRemote().toRoomEntity() }
-                Log.d("REPOSITORY", "Sincronizados ${roomEntities.size} platillos desde el servidor")
+                // Obtenemos los platillos actuales para comparar
+                val currentLocalList = mealDao.getAllMeals().firstOrNull() ?: emptyList()
+                val localMap = currentLocalList.associateBy { it.id }
+
+                val roomEntities = response.meals.map { dto ->
+                    val remoteMeal = dto.toDomainFromRemote()
+                    val existingLocal = localMap[remoteMeal.id]
+                    
+                    // Si el servidor manda imagen vacía pero nosotros tenemos una local, la mantenemos
+                    val finalMeal = if (remoteMeal.image.isNullOrEmpty() && !existingLocal?.image.isNullOrEmpty()) {
+                        remoteMeal.copy(image = existingLocal?.image)
+                    } else {
+                        remoteMeal
+                    }
+                    finalMeal.toRoomEntity()
+                }
                 mealDao.insertMeals(roomEntities)
+                Log.d("REPOSITORY", "Sincronización completada. Total: ${roomEntities.size}")
             }
         } catch (e: Exception) {
             Log.e("REPOSITORY", "Error al sincronizar: ${e.localizedMessage}")
         }
         
-        // 3. Emitir flujo constante sin filtrar por usuario
-        emitAll(mealDao.getAllMeals().map { list -> 
-            list.map { it.toDomain() } 
-        })
+        // 3. Emitir flujo constante
+        emitAll(mealDao.getAllMeals().map { list -> list.map { it.toDomain() } })
     }
 
     override fun findByDate(date: String, userId: String): Flow<List<FoodiiMeal>> = 
@@ -62,11 +71,7 @@ class MealFoodiiRepositoryImpl @Inject constructor(
         mealDao.getMealsByDateRange(startDate, endDate).map { list -> list.map { it.toDomain() } }
 
     override suspend fun saveMeal(meal: FoodiiMeal) {
-        try {
-            mealDao.insertMeal(meal.toRoomEntity())
-        } catch (e: Exception) {
-            Log.e("ROOM_DB", "Error al guardar comida: ${e.message}")
-        }
+        mealDao.insertMeal(meal.toRoomEntity())
     }
 
     override suspend fun createMealOnServer(
@@ -76,6 +81,7 @@ class MealFoodiiRepositoryImpl @Inject constructor(
         ingredients: List<Pair<String, Int>>,
         steps: List<String>,
         userId: String,
+        image: String?
     ): Result<FoodiiMeal> {
         return try {
             val body = CreateMealRequestDto(
@@ -84,30 +90,35 @@ class MealFoodiiRepositoryImpl @Inject constructor(
                 date = date.format(DateTimeFormatter.ISO_LOCAL_DATE),
                 mealTime = mealTime.name.lowercase(Locale.ROOT),
                 ingredients = ingredients.map { (ingredientId, amount) ->
-                    CreateMealIngredientPayloadDto(
-                        ingredientId = ingredientId,
-                        amount = amount,
-                    )
+                    CreateMealIngredientPayloadDto(ingredientId = ingredientId, amount = amount)
                 },
                 steps = steps.map { it.trim() }.filter { it.isNotEmpty() },
+                image = image
             )
+            
+            Log.d("AWS_API", "ENVIANDO AL SERVIDOR: ${body.name} con imagen: ${body.image ?: "NULL"}")
+
             val response = api.createMeal(body)
             if (response.success == true && response.meal != null) {
-                val domain = response.meal.toDomainFromRemote()
+                var domain = response.meal.toDomainFromRemote()
+                // ASEGURAR QUE LA IMAGEN NO SE PIERDA SI EL SERVIDOR NO LA REGRESA EN EL JSON DE RESPUESTA
+                if (domain.image.isNullOrEmpty() && !image.isNullOrEmpty()) {
+                    domain = domain.copy(image = image)
+                }
                 mealDao.insertMeal(domain.toRoomEntity())
                 Result.success(domain)
             } else {
                 Result.failure(Exception("No se pudo crear la comida"))
             }
         } catch (e: Exception) {
-            Log.e("AWS_API", "Error al crear comida: ${e.message}", e)
+            Log.e("AWS_API", "Error: ${e.message}")
             Result.failure(e)
         }
     }
 
     override suspend fun getMealById(id: String, userId: String): FoodiiMeal? {
-        val localMeal = mealDao.getMealById(id)
-        if (localMeal != null) return localMeal.toDomain()
+        val local = mealDao.getMealById(id)
+        if (local != null && !local.image.isNullOrEmpty()) return local.toDomain()
 
         return try {
             val response = api.getMealById(id = id)
@@ -115,20 +126,11 @@ class MealFoodiiRepositoryImpl @Inject constructor(
             if (meal != null) {
                 mealDao.insertMeal(meal.toRoomEntity())
                 meal
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            Log.e("AWS_API", "Error al obtener comida por ID: ${e.message}")
-            null
-        }
+            } else null
+        } catch (e: Exception) { null }
     }
 
     override suspend fun deleteMeal(id: String, userId: String) {
-        try {
-            mealDao.deleteMeal(id)
-        } catch (e: Exception) {
-            Log.e("ROOM_DB", "Error al eliminar comida: ${e.message}")
-        }
+        try { mealDao.deleteMeal(id) } catch (e: Exception) {}
     }
 }

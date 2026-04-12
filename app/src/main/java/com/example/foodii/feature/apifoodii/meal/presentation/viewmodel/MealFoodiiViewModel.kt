@@ -121,7 +121,6 @@ class MealFoodiiViewModel(
             try {
                 getMealsUseCase(userId).collect { meals ->
                     _allMeals.value = meals
-                    updateCombinedSummaries(userId, "", "")
                     _uiState.update { it.copy(isLoading = false) }
                 }
             } catch (e: Exception) {
@@ -276,7 +275,17 @@ class MealFoodiiViewModel(
                     imageUrl = uploadResult.getOrNull()
                 }
 
-                val result = saveFoodiiMealUseCase(name, date, mealTime, ingredients, steps, userId)
+                // AHORA PASAMOS imageUrl AL USE CASE
+                val result = saveFoodiiMealUseCase(
+                    name = name,
+                    date = date,
+                    mealTime = mealTime,
+                    ingredientsRequest = ingredients,
+                    steps = steps,
+                    userId = userId,
+                    image = imageUrl
+                )
+
                 _uiState.update { currentState ->
                     result.fold(
                         onSuccess = { meal ->

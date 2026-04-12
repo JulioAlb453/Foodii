@@ -18,6 +18,7 @@ interface MealFoodiiRepository {
         ingredients: List<Pair<String, Int>>,
         steps: List<String>,
         userId: String,
+        image: String? // Añadido parámetro image
     ): Result<FoodiiMeal>
 
     suspend fun getMealById(id: String, userId: String): FoodiiMeal?

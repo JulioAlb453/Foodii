@@ -1,5 +1,6 @@
 package com.example.foodii.feature.apifoodii.meal.presentation.components
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import com.example.compose.outlineDark
 import com.example.compose.primaryDark
 import com.example.compose.primaryLight
@@ -28,6 +31,9 @@ fun MealItemCard(
     onClick: () -> Unit = {}
 ) {
     val imageUrl = meal.image.toFullImageUrl()
+    val context = LocalContext.current
+
+    Log.d("IMAGE_LOAD", "Intentando cargar imagen para ${meal.name}: '$imageUrl'")
 
     Card(
         onClick = onClick,
@@ -55,7 +61,15 @@ fun MealItemCard(
                 ) {
                     if (imageUrl.isNotEmpty()) {
                         AsyncImage(
-                            model = imageUrl,
+                            model = ImageRequest.Builder(context)
+                                .data(imageUrl)
+                                .crossfade(true)
+                                .listener(
+                                    onStart = { Log.d("IMAGE_LOAD", "Iniciando carga de: $imageUrl") },
+                                    onSuccess = { _, _ -> Log.d("IMAGE_LOAD", "Carga exitosa: $imageUrl") },
+                                    onError = { _, result -> Log.e("IMAGE_LOAD", "Error al cargar: $imageUrl. Razón: ${result.throwable.message}") }
+                                )
+                                .build(),
                             contentDescription = meal.name,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop

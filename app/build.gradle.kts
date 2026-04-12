@@ -29,7 +29,7 @@ android {
         buildConfigField("String", "BASE_URL", "\"https://www.themealdb.com/api/json/v1/1/\"")
         buildConfigField("String", "FOODII_BASE_URL", "\"http://52.206.95.157:3000/\"")
         buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"foodii_preset\"")
-        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"tu_cloud_name\"")
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"duogqx5e3\"")
     }
 
     buildTypes {
