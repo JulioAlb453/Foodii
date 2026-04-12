@@ -1,6 +1,7 @@
 package com.example.foodii.feature.apifoodii.meal.presentation.viewmodel
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
@@ -8,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.example.foodii.core.hardware.domain.CameraManager
 import com.example.foodii.core.hardware.domain.ShakeDetector
 import com.example.foodii.core.utils.NotificationHelper
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
@@ -18,6 +20,7 @@ import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRa
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
 import com.example.foodii.feature.apifoodii.ingredient.domain.entity.Ingredient
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
+import com.example.foodii.feature.apifoodii.meal.domain.repository.ImageRepository
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.SaveFoodiiMealUseCase
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealFoodiiDetailsUiState
 import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
@@ -45,6 +48,8 @@ class MealFoodiiViewModel(
     private val ingredientRepository: IngredientRepository,
     private val context: Context,
     val shakeDetector: ShakeDetector,
+    private val cameraManager: CameraManager,
+    private val imageRepository: ImageRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MealFoodiiDetailsUiState())
@@ -67,6 +72,12 @@ class MealFoodiiViewModel(
 
     private val _currentStep = MutableStateFlow(1)
     val currentStep = _currentStep.asStateFlow()
+
+    private val _selectedIngredients = MutableStateFlow<List<Pair<Ingredient, Int>>>(emptyList())
+    val selectedIngredients = _selectedIngredients.asStateFlow()
+
+    private val _capturedImageUri = MutableStateFlow<Uri?>(null)
+    val capturedImageUri = _capturedImageUri.asStateFlow()
 
     fun startShakeDetection() {
         shakeDetector.startListening {
@@ -229,6 +240,24 @@ class MealFoodiiViewModel(
         _uiState.update { it.copy(isLoading = false) }
     }
 
+    fun onTakePhoto(onUriReady: (Uri?) -> Unit) {
+        cameraManager.capturePhoto { uri ->
+            _capturedImageUri.value = uri
+            onUriReady(uri)
+        }
+    }
+
+    fun addIngredientToDraft(ingredient: Ingredient, amount: Int) {
+        val currentList = _selectedIngredients.value.toMutableList()
+        currentList.add(ingredient to amount)
+        _selectedIngredients.value = currentList
+    }
+
+    fun removeIngredientFromDraft(ingredientId: String) {
+        val currentList = _selectedIngredients.value.filter { it.first.id != ingredientId }
+        _selectedIngredients.value = currentList
+    }
+
     fun saveMeal(
         name: String,
         date: LocalDate,
@@ -236,10 +265,17 @@ class MealFoodiiViewModel(
         ingredients: List<Pair<String, Int>>,
         steps: List<String>,
         userId: String,
+        imageUri: Uri? = null
     ) {
         _uiState.update { it.copy(isLoading = true, error = null, successData = null) }
         viewModelScope.launch {
             try {
+                var imageUrl: String? = null
+                if (imageUri != null) {
+                    val uploadResult = imageRepository.uploadImage(imageUri)
+                    imageUrl = uploadResult.getOrNull()
+                }
+
                 val result = saveFoodiiMealUseCase(name, date, mealTime, ingredients, steps, userId)
                 _uiState.update { currentState ->
                     result.fold(
@@ -322,5 +358,9 @@ class MealFoodiiViewModel(
 
     fun clearError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    fun loadRandomMeal(userId: String) {
+        // Implementación pendiente si es necesaria
     }
 }

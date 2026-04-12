@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 class MealFoodiiRepositoryImpl @Inject constructor(
@@ -27,49 +27,39 @@ class MealFoodiiRepositoryImpl @Inject constructor(
 ) : MealFoodiiRepository {
 
     override fun findAll(userId: String): Flow<List<FoodiiMeal>> = flow {
-        Log.d("DIAGNOSTICO", "Buscando platillos para userId: $userId")
+        Log.d("REPOSITORY", "Buscando todos los platillos")
         
-        // 1. Emitir lo que ya está en Room
+        // 1. Emitir lo que ya está en Room (Sin filtrar por userId)
         try {
-            val localMeals = mealDao.getAllMeals(userId).first()
+            val localMeals = mealDao.getAllMeals().firstOrNull() ?: emptyList()
             emit(localMeals.map { it.toDomain() })
         } catch (e: Exception) {
-            Log.e("AWS_API", "Error al leer local: ${e.message}")
+            Log.e("REPOSITORY", "Error al leer local: ${e.message}")
         }
 
-        // 2. Sincronizar y CORREGIR el userId si viene vacío del servidor
+        // 2. Sincronizar
         try {
             val response = api.getMealsAPI()
             if (response.success == true && response.meals != null) {
-                val roomEntities = response.meals.map { dto ->
-                    var domain = dto.toDomainFromRemote()
-                    
-                    // Si el servidor no mandó el createdBy, le asignamos el que estamos usando
-                    if (domain.createdBy.isEmpty()) {
-                        domain = domain.copy(createdBy = userId)
-                    }
-                    
-                    domain.toRoomEntity()
-                }
-                
-                Log.d("DIAGNOSTICO", "Insertando ${roomEntities.size} platillos con userId corregido")
+                val roomEntities = response.meals.map { it.toDomainFromRemote().toRoomEntity() }
+                Log.d("REPOSITORY", "Sincronizados ${roomEntities.size} platillos desde el servidor")
                 mealDao.insertMeals(roomEntities)
             }
         } catch (e: Exception) {
-            Log.e("AWS_API", "Error al sincronizar con red: ${e.localizedMessage}")
+            Log.e("REPOSITORY", "Error al sincronizar: ${e.localizedMessage}")
         }
         
-        // 3. Emitir flujo constante
-        emitAll(mealDao.getAllMeals(userId).map { list -> 
+        // 3. Emitir flujo constante sin filtrar por usuario
+        emitAll(mealDao.getAllMeals().map { list -> 
             list.map { it.toDomain() } 
         })
     }
 
     override fun findByDate(date: String, userId: String): Flow<List<FoodiiMeal>> = 
-        mealDao.getMealsByDate(date, userId).map { list -> list.map { it.toDomain() } }
+        mealDao.getMealsByDate(date).map { list -> list.map { it.toDomain() } }
 
     override fun findByDateRange(startDate: String, endDate: String, userId: String): Flow<List<FoodiiMeal>> = 
-        mealDao.getMealsByDateRange(startDate, endDate, userId).map { list -> list.map { it.toDomain() } }
+        mealDao.getMealsByDateRange(startDate, endDate).map { list -> list.map { it.toDomain() } }
 
     override suspend fun saveMeal(meal: FoodiiMeal) {
         try {
@@ -103,10 +93,7 @@ class MealFoodiiRepositoryImpl @Inject constructor(
             )
             val response = api.createMeal(body)
             if (response.success == true && response.meal != null) {
-                var domain = response.meal.toDomainFromRemote()
-                if (domain.createdBy.isEmpty()) {
-                    domain = domain.copy(createdBy = userId)
-                }
+                val domain = response.meal.toDomainFromRemote()
                 mealDao.insertMeal(domain.toRoomEntity())
                 Result.success(domain)
             } else {
@@ -119,17 +106,15 @@ class MealFoodiiRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getMealById(id: String, userId: String): FoodiiMeal? {
-        val localMeal = mealDao.getMealById(id, userId)
+        val localMeal = mealDao.getMealById(id)
         if (localMeal != null) return localMeal.toDomain()
 
         return try {
             val response = api.getMealById(id = id)
             val meal = response.meal?.toDomainFromRemote()
             if (meal != null) {
-                // También corregimos aquí por si acaso
-                val mealToSave = if (meal.createdBy.isEmpty()) meal.copy(createdBy = userId) else meal
-                mealDao.insertMeal(mealToSave.toRoomEntity())
-                mealToSave
+                mealDao.insertMeal(meal.toRoomEntity())
+                meal
             } else {
                 null
             }
@@ -141,7 +126,7 @@ class MealFoodiiRepositoryImpl @Inject constructor(
 
     override suspend fun deleteMeal(id: String, userId: String) {
         try {
-            mealDao.deleteMeal(id, userId)
+            mealDao.deleteMeal(id)
         } catch (e: Exception) {
             Log.e("ROOM_DB", "Error al eliminar comida: ${e.message}")
         }

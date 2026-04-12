@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,10 +33,8 @@ import com.example.compose.onPrimaryLight
 import com.example.compose.outlineLight
 import com.example.compose.primaryDark
 import com.example.compose.primaryLight
-import com.example.foodii.feature.apifoodii.meal.presentation.components.CreateMealDialog
 import com.example.foodii.feature.apifoodii.meal.presentation.components.MealItemCard
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +44,8 @@ fun MealsListScreen(
     onViewSummaryClick: () -> Unit,
     onIngredientsClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onMealClick: (String) -> Unit
+    onMealClick: (String) -> Unit,
+    onAddMealClick: () -> Unit
 ) {
     val context = LocalContext.current
     
@@ -61,16 +59,6 @@ fun MealsListScreen(
     FoodiiTheme( dynamicColor = false) {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val meals by viewModel.allMeals.collectAsStateWithLifecycle()
-        val ingredientsForm by viewModel.ingredientsForMealForm.collectAsStateWithLifecycle()
-        val showCreateMealFlow = remember { MutableStateFlow(false) }
-        val showCreateMeal by showCreateMealFlow.collectAsStateWithLifecycle()
-
-        LaunchedEffect(showCreateMeal) {
-            if (showCreateMeal) {
-                viewModel.clearSuccessData()
-                viewModel.loadIngredientsForMealForm(userId)
-            }
-        }
 
         LaunchedEffect(Unit) {
             viewModel.loadAllMeals(userId)
@@ -97,11 +85,7 @@ fun MealsListScreen(
                     ),
                     title = { Text("Platillos Disponibles", fontWeight = FontWeight.Bold) },
                     actions = {
-                        IconButton(onClick = {
-                            viewModel.clearError()
-                            viewModel.clearSuccessData()
-                            showCreateMealFlow.value = true
-                        }) {
+                        IconButton(onClick = onAddMealClick) {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "Nuevo platillo",
@@ -143,22 +127,6 @@ fun MealsListScreen(
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                CreateMealDialog(
-                    show = showCreateMeal,
-                    ingredientsCatalog = ingredientsForm,
-                    isLoading = uiState.isLoading,
-                    errorMessage = uiState.error,
-                    successData = uiState.successData,
-                    onDismiss = { showCreateMealFlow.value = false },
-                    onClearError = { viewModel.clearError() },
-                    onConsumedSuccess = {
-                        viewModel.clearSuccessData()
-                        viewModel.loadAllMeals(userId)
-                    },
-                    onSave = { name, date, mealTime, ing, steps ->
-                        viewModel.saveMeal(name, date, mealTime, ing, steps, userId)
-                    },
-                )
                 when {
                     uiState.isLoading && meals.isEmpty() -> {
                         CircularProgressIndicator(

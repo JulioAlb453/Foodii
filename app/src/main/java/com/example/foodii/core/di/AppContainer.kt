@@ -79,7 +79,7 @@ class AppContainer(context: Context) {
     }
 
     val foodiiRepository: MealFoodiiRepository by lazy {
-        MealFoodiiRepositoryImpl(context, foodiiApi, foodiiDatabase.mealDao())
+        MealFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.mealDao())
     }
 
     val ingredientRepository: IngredientRepository by lazy {

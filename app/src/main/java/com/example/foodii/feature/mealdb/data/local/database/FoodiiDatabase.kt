@@ -15,7 +15,7 @@ import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
     PlannedMealEntity::class,
     MealRoomEntity::class,
     IngredientRoomEntity::class],
-    version = 7,
+    version = 8, // Incrementado de 7 a 8
     exportSchema = false)
 
 abstract class FoodiiDatabase : RoomDatabase() {

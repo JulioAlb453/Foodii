@@ -130,14 +130,14 @@ class MealReminderWidget : GlanceAppWidget() {
                             )
                         )
 
-                        val instructions = if (detail != null && detail.instructions.isNotEmpty()) {
-                            detail.instructions
+                        val instructionsText = if (detail != null && detail.stepsPlainText().isNotEmpty()) {
+                            detail.stepsPlainText()
                         } else {
                             "Toca para ver la receta"
                         }
 
                         Text(
-                            text = instructions,
+                            text = instructionsText,
                             maxLines = 1,
                             style = TextStyle(
                                 fontSize = TypographyFoodii.bodySmall.fontSize,

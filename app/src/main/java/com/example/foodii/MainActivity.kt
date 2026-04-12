@@ -17,6 +17,7 @@ import com.example.compose.FoodiiTheme
 import com.example.foodii.core.di.AppContainer
 import com.example.foodii.feature.apifoodii.ingredient.presentation.screen.IngredientsScreen
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
+import com.example.foodii.feature.apifoodii.meal.presentation.screen.AddMealScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealDetailScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsListScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsSummaryScreen
@@ -128,7 +129,26 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onMealClick = { mealId ->
                                     navController.navigate("meal_detail/$mealId")
-                                }
+                                },
+                                onAddMealClick = { navController.navigate("add_meal") }
+                            )
+                        }
+                    }
+
+                    composable("add_meal") {
+                        val user = currentUser
+                        if (user != null) {
+                            val mealViewModel: MealFoodiiViewModel = viewModel(
+                                factory = appContainer.mealModule.provideMealViewModelFactory()
+                            )
+                            val ingredientViewModel: IngredientViewModel = viewModel(
+                                factory = appContainer.ingredientModule.provideIngredientViewModelFactory()
+                            )
+                            AddMealScreen(
+                                viewModel = mealViewModel,
+                                ingredientViewModel = ingredientViewModel,
+                                userId = user.id,
+                                onBackPressed = { navController.navigateUp() }
                             )
                         }
                     }

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -27,6 +28,8 @@ android {
 
         buildConfigField("String", "BASE_URL", "\"https://www.themealdb.com/api/json/v1/1/\"")
         buildConfigField("String", "FOODII_BASE_URL", "\"http://52.206.95.157:3000/\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"foodii_preset\"")
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"tu_cloud_name\"")
     }
 
     buildTypes {
@@ -108,6 +111,13 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
 
+    // Cloudinary
+    implementation(libs.cloudinary.android)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging.ktx)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -116,6 +126,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
-
 }

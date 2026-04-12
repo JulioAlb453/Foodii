@@ -168,7 +168,68 @@ fun MealDetailScreen(
 
                     item {
                         Text(
-                            text = "Ingredientes usados",
+                            text = "Pasos de la receta",
+                            style = TypographyFoodii.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 8.dp),
+                            color = onBackgroundLight
+                        )
+                    }
+
+                    if (meal!!.steps.isEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = surfaceContainerLight)
+                            ) {
+                                Text(
+                                    "Este platillo no tiene instrucciones detalladas.",
+                                    modifier = Modifier.padding(16.dp),
+                                    style = TypographyFoodii.bodyMedium,
+                                    color = outlineLight
+                                )
+                            }
+                        }
+                    } else {
+                        items(meal!!.steps.sortedBy { it.stepOrder }) { step ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = surfaceContainerLight),
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Surface(
+                                        color = primaryLight,
+                                        shape = RoundedCornerShape(50),
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                text = "${step.stepOrder}",
+                                                style = TypographyFoodii.bodySmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = onPrimaryLight
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = step.description,
+                                        style = TypographyFoodii.bodyLarge,
+                                        color = onSurfaceLight
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Text(
+                            text = "Ingredientes",
                             style = TypographyFoodii.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 8.dp),
@@ -181,7 +242,7 @@ fun MealDetailScreen(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = surfaceContainerLight),
-                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
+                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
@@ -206,43 +267,6 @@ fun MealDetailScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = secondaryLight
                                 )
-                            }
-                        }
-                    }
-
-                    if (meal!!.steps.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = "Instrucciones",
-                                style = TypographyFoodii.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 8.dp),
-                                color = onBackgroundLight
-                            )
-                        }
-                        items(meal!!.steps.sortedBy { it.stepOrder }) { step ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = surfaceContainerLight),
-                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.FormatListNumbered,
-                                        contentDescription = null,
-                                        tint = primaryLight,
-                                        modifier = Modifier.padding(end = 12.dp)
-                                    )
-                                    Text(
-                                        text = "${step.stepOrder}. ${step.description}",
-                                        style = TypographyFoodii.bodyLarge,
-                                        color = onSurfaceLight
-                                    )
-                                }
                             }
                         }
                     }
