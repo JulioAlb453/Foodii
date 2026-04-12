@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,17 +27,29 @@ import com.example.foodii.feature.auth.presentation.AuthViewModel
 import com.example.foodii.feature.auth.presentation.AuthViewModelFactory
 import com.example.foodii.feature.auth.presentation.LoginScreen
 import com.example.foodii.feature.auth.presentation.RegisterScreen
+import com.example.foodii.feature.food_preferences.presentation.FoodPreferencesScreen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
+import com.example.foodii.core.service.worker.WidgetUpdateWorker
+import androidx.work.OneTimeWorkRequestBuilder //Ocupado para la presentación en clase
+import androidx.work.WorkManager //Ocupado para la presentación en clase
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var authLocalDataSource: AuthLocalDataSource
 
     lateinit var appContainer: AppContainer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        appContainer = AppContainer(this)
+        appContainer = AppContainer(this, authLocalDataSource)
+        WidgetUpdateWorker.schedule(this)
+        val testRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build() //Ocupado para la presentación en clase
+        WorkManager.getInstance(this).enqueue(testRequest)  //Ocupado para la presentación en clase
 
         enableEdgeToEdge()
         setContent {
@@ -74,9 +85,18 @@ class MainActivity : ComponentActivity() {
                         )
 
                         LaunchedEffect(currentUser) {
-                            if (currentUser != null && widgetMealId.isNullOrEmpty()) {
-                                navController.navigate("meals_list") {
-                                    popUpTo("login") { inclusive = true }
+                            val user = currentUser
+                            android.util.Log.d("AUTH_DEBUG", "currentUser: $user")
+                            android.util.Log.d("AUTH_DEBUG", "prefs: ${user?.notificationCategoryPreferences}")
+                            if (user != null && widgetMealId.isNullOrEmpty()) {
+                                if (user.notificationCategoryPreferences.isNullOrEmpty()) {
+                                    navController.navigate("food_preferences_screen") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate("meals_list") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 }
                             }
                         }
@@ -98,8 +118,22 @@ class MainActivity : ComponentActivity() {
                         )
                         RegisterScreen(
                             viewModel = viewModel,
-                            onRegisterSuccess = { navController.navigateUp() },
+                            onRegisterSuccess = {
+                                navController.navigate("login") {
+                                    popUpTo("register") { inclusive = true }
+                                }
+                            },
                             onNavigateBack = { navController.navigateUp() }
+                        )
+                    }
+
+                    composable("food_preferences_screen") {
+                        FoodPreferencesScreen(
+                            onNavigateToHome = {
+                                navController.navigate("meals_list") {
+                                    popUpTo("food_preferences_screen") { inclusive = true }
+                                }
+                            }
                         )
                     }
 

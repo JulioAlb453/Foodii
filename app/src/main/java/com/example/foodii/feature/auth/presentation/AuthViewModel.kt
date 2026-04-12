@@ -36,20 +36,39 @@ class AuthViewModel(
         }
     }
 
-    fun register(username: String, password: String) {
+    /**
+     * Realiza el registro con preferencias y, si es exitoso, realiza el login automáticamente.
+     */
+    fun registerThenLogin(
+        username: String, 
+        password: String, 
+        preferences: List<String> = emptyList()
+    ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            val result = registerUseCase(username, password)
-            _uiState.update { currentState ->
-                result.fold(
-                    onSuccess = { user ->
-                        currentState.copy(isLoading = false, user = user, isSuccess = true)
-                    },
-                    onFailure = { error ->
-                        currentState.copy(isLoading = false, error = error.message)
+            
+            // 1. Registro enviando las preferencias seleccionadas
+            val registerResult = registerUseCase(username, password, preferences)
+            
+            registerResult.fold(
+                onSuccess = {
+                    // 2. Login automático tras registro exitoso para obtener el token
+                    val loginResult = loginUseCase(username, password)
+                    _uiState.update { currentState ->
+                        loginResult.fold(
+                            onSuccess = { user ->
+                                currentState.copy(isLoading = false, user = user, isSuccess = true)
+                            },
+                            onFailure = { error ->
+                                currentState.copy(isLoading = false, error = "Registro exitoso, pero error al iniciar sesión: ${error.message}")
+                            }
+                        )
                     }
-                )
-            }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false, error = error.message) }
+                }
+            )
         }
     }
 

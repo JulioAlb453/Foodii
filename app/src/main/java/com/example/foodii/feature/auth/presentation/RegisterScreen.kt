@@ -30,8 +30,10 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var validationError by remember { mutableStateOf<String?>(null) }
 
+    // Cuando el registro es exitoso, navegar al login
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
+            viewModel.resetError()
             onRegisterSuccess()
         }
     }
@@ -110,8 +112,11 @@ fun RegisterScreen(
                     onClick = {
                         if (password != confirmPassword) {
                             validationError = "Las contraseñas no coinciden"
+                        } else if (username.length < 4 || password.length < 6) {
+                            validationError = "Usuario min. 4 carac. y Contraseña min. 6 carac."
                         } else {
-                            viewModel.register(username, password)
+                            // Llama al registro simple, sin preferencias
+                            viewModel.registerThenLogin(username, password)
                         }
                     },
                     isLoading = uiState.isLoading,
@@ -128,7 +133,6 @@ fun RegisterScreen(
         )
     }
 
-    // Diálogo de error para validaciones locales (ej: contraseñas no coinciden)
     validationError?.let { message ->
         ErrorDialog(
             message = message,
