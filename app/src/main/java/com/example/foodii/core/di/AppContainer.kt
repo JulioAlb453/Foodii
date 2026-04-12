@@ -5,6 +5,10 @@ import android.util.Log
 import com.example.foodii.BuildConfig
 import com.example.foodii.core.network.AuthInterceptor
 import com.example.foodii.core.network.FoodiiAPI
+import com.example.foodii.core.hardware.data.AndroidCameraManager
+import com.example.foodii.core.hardware.data.AndroidShakeDetector
+import com.example.foodii.core.hardware.domain.CameraManager
+import com.example.foodii.core.hardware.domain.ShakeDetector
 import com.example.foodii.feature.apifoodii.ingredient.data.repositories.IngredientFoodiiRepositoryImpl
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
 import com.example.foodii.feature.apifoodii.meal.data.repositories.MealFoodiiRepositoryImpl
@@ -67,7 +71,7 @@ class AppContainer(context: Context, val authLocalDataSource: AuthLocalDataSourc
     }
 
     val foodiiRepository: MealFoodiiRepository by lazy {
-        MealFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.mealDao())
+        MealFoodiiRepositoryImpl(context, foodiiApi, foodiiDatabase.mealDao())
     }
 
     val ingredientRepository: IngredientRepository by lazy {
@@ -82,12 +86,22 @@ class AppContainer(context: Context, val authLocalDataSource: AuthLocalDataSourc
         PlannerRepositoryImpl(mealDbApi, foodiiDatabase.plannedMealDao())
     }
 
+    val shakeDetector: ShakeDetector by lazy {
+        AndroidShakeDetector(context)
+    }
+
+    val cameraManager: CameraManager by lazy {
+        AndroidCameraManager(context)
+    }
+
     val mealModule: MealFoodiiModule by lazy {
         MealFoodiiModule(
             mealRepository = foodiiRepository,
             ingredientRepository = ingredientRepository,
             plannerRepository = plannerRepository,
-            context = context
+            context = context,
+            shakeDetector = shakeDetector,
+            cameraManager = cameraManager
         )
     }
 

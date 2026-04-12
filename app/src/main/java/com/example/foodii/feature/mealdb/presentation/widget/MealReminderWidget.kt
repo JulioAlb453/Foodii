@@ -49,18 +49,20 @@ class MealReminderWidget : GlanceAppWidget() {
         val repository = entryPoint.plannerRepository()
         val authDataSource = entryPoint.authLocalDataSource()
         val mealRepository = entryPoint.mealRepository()
-
         val user = authDataSource.getUser().firstOrNull()
         val userId = user?.id ?: ""
 
         val now = System.currentTimeMillis()
         val plannedMeals = if (userId.isNotEmpty()) {
-            repository.getPlannedMealsForDateRange(userId, now, now + (48 * 60 * 60 * 1000))
+            repository.getPlannedMealsForDateRange(userId, now, now + (24L * 60 * 60 * 1000))
         } else {
             emptyList()
         }
 
         val nextPlanned = plannedMeals.firstOrNull()
+        
+        val nextPlanned = plannedMeals.sortedBy { it.date }.firstOrNull()
+
         val fullMealDetail = nextPlanned?.let { mealRepository.getMealById(it.mealId, userId) }
 
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -138,6 +140,7 @@ class MealReminderWidget : GlanceAppWidget() {
                 ) {
                     if (planned != null) {
                         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        sdf.timeZone = TimeZone.getTimeZone("UTC")
                         val dateString = sdf.format(Date(planned.date))
 
                         Text(
@@ -148,6 +151,14 @@ class MealReminderWidget : GlanceAppWidget() {
                                 color = ColorProvider(R.color.white)
                             )
                         )
+
+
+                        val instructions = if (detail != null && detail.instructions.isNotEmpty()) {
+                            detail.instructions
+                        } else {
+                            "Toca para ver la receta"
+                        }
+
 
                         Text(
                             text = detail?.instructions ?: "Toca para ver la receta",

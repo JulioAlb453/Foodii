@@ -8,14 +8,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.compose.outlineDark
-import com.example.compose.outlineLight
 import com.example.compose.primaryDark
 import com.example.compose.primaryLight
 import com.example.compose.surfaceVariantLight
+import com.example.foodii.core.utils.toFullImageUrl
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.ui.theme.TypographyFoodii
 
@@ -25,6 +27,8 @@ fun MealItemCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+    val imageUrl = meal.image.toFullImageUrl()
+
     Card(
         onClick = onClick,
         modifier = modifier
@@ -47,14 +51,23 @@ fun MealItemCard(
                 Surface(
                     color = primaryDark,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(56.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Restaurant,
-                        contentDescription = null,
-                        modifier = Modifier.padding(12.dp),
-                        tint = primaryLight
-                    )
+                    if (imageUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = meal.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Restaurant,
+                            contentDescription = null,
+                            modifier = Modifier.padding(12.dp),
+                            tint = primaryLight
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -74,7 +87,7 @@ fun MealItemCard(
             }
             
             Text(
-                text = "${meal.totalCalories} kcal",
+                text = "${meal.totalCalories.toInt()} kcal",
                 style = TypographyFoodii.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = primaryLight,

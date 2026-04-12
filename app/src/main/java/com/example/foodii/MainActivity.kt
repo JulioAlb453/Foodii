@@ -15,6 +15,7 @@ import com.example.compose.FoodiiTheme
 import com.example.foodii.core.di.AppContainer
 import com.example.foodii.feature.apifoodii.ingredient.presentation.screen.IngredientsScreen
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
+import com.example.foodii.feature.apifoodii.meal.presentation.screen.AddMealScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealDetailScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsListScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsSummaryScreen
@@ -66,7 +67,6 @@ class MainActivity : ComponentActivity() {
                             popUpTo("login") { inclusive = true }
                         }
                         navController.navigate("meals_summary")
-                        
                         navController.navigate("meal_detail/$widgetMealId")
                     }
                 }
@@ -149,6 +149,7 @@ class MainActivity : ComponentActivity() {
                                 userId = user.id,
                                 onViewSummaryClick = { navController.navigate("meals_summary") },
                                 onIngredientsClick = { navController.navigate("ingredients") },
+                                onAddMealClick = { navController.navigate("add_meal") },
                                 onLogoutClick = {
                                     scope.launch {
                                         appContainer.authRepository.logout()
@@ -160,6 +161,24 @@ class MainActivity : ComponentActivity() {
                                 onMealClick = { mealId ->
                                     navController.navigate("meal_detail/$mealId")
                                 }
+                            )
+                        }
+                    }
+
+                    composable("add_meal") {
+                        val user = currentUser
+                        if (user != null) {
+                            val mealViewModel: MealFoodiiViewModel = viewModel(
+                                factory = appContainer.mealModule.provideMealViewModelFactory()
+                            )
+                            val ingredientViewModel: IngredientViewModel = viewModel(
+                                factory = appContainer.ingredientModule.provideIngredientViewModelFactory()
+                            )
+                            AddMealScreen(
+                                viewModel = mealViewModel,
+                                ingredientViewModel = ingredientViewModel,
+                                userId = user.id,
+                                onBackPressed = { navController.popBackStack() }
                             )
                         }
                     }
@@ -187,8 +206,7 @@ class MainActivity : ComponentActivity() {
                         val user = currentUser
                         if (user != null) {
                             val viewModel: MealFoodiiViewModel = viewModel(
-                                factory = appContainer.
-                                mealModule.provideMealViewModelFactory()
+                                factory = appContainer.mealModule.provideMealViewModelFactory()
                             )
                             MealsSummaryScreen(
                                 viewModel = viewModel,
@@ -203,9 +221,7 @@ class MainActivity : ComponentActivity() {
 
                     composable("ingredients") {
                         val viewModel: IngredientViewModel = viewModel(
-                            factory = appContainer.
-                            ingredientModule.
-                            provideIngredientViewModelFactory()
+                            factory = appContainer.ingredientModule.provideIngredientViewModelFactory()
                         )
                         IngredientsScreen(
                             viewModel = viewModel,
