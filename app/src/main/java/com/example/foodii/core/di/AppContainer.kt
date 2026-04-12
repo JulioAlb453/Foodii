@@ -34,11 +34,8 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class AppContainer(context: Context) {
+class AppContainer(context: Context, val authLocalDataSource: AuthLocalDataSource) {
 
-    private val authLocalDataSource: AuthLocalDataSource by lazy {
-        AuthLocalDataSourceImpl(context)
-    }
 
     private val loggingInterceptor = HttpLoggingInterceptor { message ->
         Log.d("API_TRAFFIC", message)

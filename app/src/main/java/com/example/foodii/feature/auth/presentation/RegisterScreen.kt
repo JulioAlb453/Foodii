@@ -42,6 +42,7 @@ fun RegisterScreen(
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
+            viewModel.resetError()
             onRegisterSuccess()
         }
     }
@@ -120,8 +121,10 @@ fun RegisterScreen(
                     onClick = {
                         if (form.password != form.confirmPassword) {
                             formFlow.update { it.copy(validationError = "Las contraseñas no coinciden") }
+                        } else if (form.username.length < 4 || form.password.length < 6) {
+                            formFlow.update { it.copy(validationError = "Usuario min. 4 carac. y Contraseña min. 6 carac.") }
                         } else {
-                            viewModel.register(form.username, form.password)
+                            viewModel.registerThenLogin(form.username, form.password)
                         }
                     },
                     isLoading = uiState.isLoading,

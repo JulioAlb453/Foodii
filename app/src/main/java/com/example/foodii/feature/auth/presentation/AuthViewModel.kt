@@ -26,12 +26,12 @@ class AuthViewModel(
     fun login(username: String, password: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            
+
             val fcmToken = getFcmToken()
             Log.d("AuthViewModel", "FCM Token obtenido: $fcmToken")
-            
+
             val result = loginUseCase(username, password, fcmToken)
-            
+
             _uiState.update { currentState ->
                 result.fold(
                     onSuccess = { user ->
@@ -57,19 +57,38 @@ class AuthViewModel(
     }
 
     fun register(username: String, password: String) {
+        registerThenLogin(username, password)
+    }
+
+    fun registerThenLogin(
+        username: String,
+        password: String,
+        preferences: List<String> = emptyList()
+    ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            val result = registerUseCase(username, password)
-            _uiState.update { currentState ->
-                result.fold(
-                    onSuccess = { user ->
-                        currentState.copy(isLoading = false, user = user, isSuccess = true)
-                    },
-                    onFailure = { error ->
-                        currentState.copy(isLoading = false, error = error.message)
+
+            val registerResult = registerUseCase(username, password, preferences)
+
+            registerResult.fold(
+                onSuccess = {
+                    val fcmToken = getFcmToken()
+                    val loginResult = loginUseCase(username, password, fcmToken)
+                    _uiState.update { currentState ->
+                        loginResult.fold(
+                            onSuccess = { user ->
+                                currentState.copy(isLoading = false, user = user, isSuccess = true)
+                            },
+                            onFailure = { error ->
+                                currentState.copy(isLoading = false, error = "Registro exitoso, pero error al iniciar sesión: ${error.message}")
+                            }
+                        )
                     }
-                )
-            }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false, error = error.message) }
+                }
+            )
         }
     }
 
