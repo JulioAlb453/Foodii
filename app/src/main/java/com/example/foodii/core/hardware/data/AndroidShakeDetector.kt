@@ -6,6 +6,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import com.example.foodii.core.hardware.domain.ShakeDetector
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 class AndroidShakeDetector(context: Context) : ShakeDetector, SensorEventListener {
@@ -14,12 +15,13 @@ class AndroidShakeDetector(context: Context) : ShakeDetector, SensorEventListene
     private var onShakeListener: (() -> Unit)? = null
 
     private var lastShakeTime: Long = 0
-    private val shakeThreshold = 12.0f
+    private val shakeThreshold = 15.0f
+    private val shakeSlopTimeMs = 800
 
     override fun startListening(onShake: () -> Unit) {
         onShakeListener = onShake
         accelerometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
         }
     }
 
@@ -37,8 +39,8 @@ class AndroidShakeDetector(context: Context) : ShakeDetector, SensorEventListene
             val acceleration = sqrt((x * x + y * y + z * z).toDouble()).toFloat() - SensorManager.GRAVITY_EARTH
             val currentTime = System.currentTimeMillis()
 
-            if (acceleration > shakeThreshold) {
-                if (currentTime - lastShakeTime > 1000) {
+            if (acceleration > shakeThreshold && (abs(x) > 10 || abs(y) > 10)) {
+                if (currentTime - lastShakeTime > shakeSlopTimeMs) {
                     lastShakeTime = currentTime
                     onShakeListener?.invoke()
                 }

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -237,9 +238,24 @@ fun MealDetailScreen(
                             )
                         }
                     } else if (sortedSteps.size > 4) {
+                        // VISTA DE LIBRO (PAGINADA) - 3 pasos por página
                         item {
                             val pageCount = (sortedSteps.size + stepsPerPage - 1) / stepsPerPage
                             val pagerState = rememberPagerState(pageCount = { pageCount })
+                            
+                            // Efecto de sacudida para cambiar de página
+                            DisposableEffect(Unit) {
+                                viewModel.shakeDetector.startListening {
+                                    scope.launch {
+                                        val nextPage = (pagerState.currentPage + 1) % pageCount
+                                        pagerState.animateScrollToPage(nextPage)
+                                    }
+                                }
+                                onDispose {
+                                    viewModel.shakeDetector.stopListening()
+                                }
+                            }
+
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -300,10 +316,10 @@ fun MealDetailScreen(
                                         }
                                     }
                                     
-                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Spacer(modifier = Modifier.height(8.dp))
                                     
                                     Text(
-                                        text = "Página ${pagerState.currentPage + 1} de $pageCount (Desliza para leer)",
+                                        text = "Página ${pagerState.currentPage + 1} de $pageCount (Sacude para cambiar)",
                                         style = TypographyFoodii.labelSmall,
                                         color = outlineLight
                                     )
