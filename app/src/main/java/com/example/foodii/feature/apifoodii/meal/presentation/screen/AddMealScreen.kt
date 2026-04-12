@@ -126,9 +126,8 @@ fun AddMealScreen(
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
@@ -178,7 +177,7 @@ fun AddMealScreen(
 
                 item {
                     HorizontalDivider()
-                    Text("Pasos de la receta", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Text("Instrucciones de Preparación", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -215,7 +214,7 @@ fun AddMealScreen(
                 item {
                     HorizontalDivider()
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Ingredientes", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("Ingredientes Seleccionados", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         TextButton(onClick = { if (!uiState.isLoading) showIngredientDialog = true }) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Text("Añadir")
@@ -223,19 +222,29 @@ fun AddMealScreen(
                     }
                 }
 
-                items(selectedIngredients) { (ingredient, amount) ->
-                    ListItem(
-                        headlineContent = { Text(ingredient.name) },
-                        supportingContent = { Text("${amount}g") },
-                        trailingContent = {
-                            IconButton(
-                                enabled = !uiState.isLoading,
-                                onClick = { viewModel.removeIngredientFromDraft(ingredient.id) }
-                            ) {
-                                Icon(Icons.Default.Delete, tint = errorLight, contentDescription = null)
+                if (selectedIngredients.isEmpty()) {
+                    item {
+                        Text("No has añadido ingredientes", style = MaterialTheme.typography.bodyMedium, color = outlineLight)
+                    }
+                } else {
+                    items(selectedIngredients) { (ingredient, amount) ->
+                        ListItem(
+                            headlineContent = { Text(ingredient.name) },
+                            supportingContent = { Text("${amount}g") },
+                            trailingContent = {
+                                IconButton(
+                                    enabled = !uiState.isLoading,
+                                    onClick = { viewModel.removeIngredientFromDraft(ingredient.id) }
+                                ) {
+                                    Icon(Icons.Default.Delete, tint = errorLight, contentDescription = null)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
 
@@ -250,7 +259,7 @@ fun AddMealScreen(
                     ) {
                         CircularProgressIndicator(color = primaryLight)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Procesando...", fontWeight = FontWeight.Bold)
+                        Text("Guardando receta...", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -260,13 +269,13 @@ fun AddMealScreen(
     if (showIngredientDialog) {
         AlertDialog(
             onDismissRequest = { showIngredientDialog = false },
-            title = { Text("Catálogo de Ingredientes") },
+            title = { Text("Elegir Ingredientes") },
             text = {
                 Box(modifier = Modifier.height(300.dp)) {
                     LazyColumn {
                         items(ingredientUiState.ingredients) { ingredient ->
                             ListItem(
-                                modifier = Modifier.clickable { 
+                                modifier = Modifier.clickable {
                                     viewModel.addIngredientToDraft(ingredient, 100)
                                     showIngredientDialog = false
                                 },

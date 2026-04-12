@@ -3,10 +3,13 @@ package com.example.foodii.feature.apifoodii.meal.presentation.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
@@ -19,7 +22,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.compose.*
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
 import com.example.ui.theme.TypographyFoodii
@@ -52,7 +57,7 @@ fun MealDetailScreen(
                     titleContentColor = onPrimaryLight,
                     navigationIconContentColor = onPrimaryLight
                 ),
-                title = { Text("Detalle del Platillo", fontWeight = FontWeight.Bold) },
+                title = { Text("Detalle de Receta", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -168,68 +173,7 @@ fun MealDetailScreen(
 
                     item {
                         Text(
-                            text = "Pasos de la receta",
-                            style = TypographyFoodii.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 8.dp),
-                            color = onBackgroundLight
-                        )
-                    }
-
-                    if (meal!!.steps.isEmpty()) {
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = surfaceContainerLight)
-                            ) {
-                                Text(
-                                    "Este platillo no tiene instrucciones detalladas.",
-                                    modifier = Modifier.padding(16.dp),
-                                    style = TypographyFoodii.bodyMedium,
-                                    color = outlineLight
-                                )
-                            }
-                        }
-                    } else {
-                        items(meal!!.steps.sortedBy { it.stepOrder }) { step ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = surfaceContainerLight),
-                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Surface(
-                                        color = primaryLight,
-                                        shape = RoundedCornerShape(50),
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                text = "${step.stepOrder}",
-                                                style = TypographyFoodii.bodySmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = onPrimaryLight
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = step.description,
-                                        style = TypographyFoodii.bodyLarge,
-                                        color = onSurfaceLight
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    item {
-                        Text(
-                            text = "Ingredientes",
+                            text = "Ingredientes usados",
                             style = TypographyFoodii.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 8.dp),
@@ -270,8 +214,154 @@ fun MealDetailScreen(
                             }
                         }
                     }
-                    
+
                     item {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+                        Text(
+                            text = "Instrucciones de Preparación",
+                            style = TypographyFoodii.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = primaryLight
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    val sortedSteps = meal!!.steps.sortedBy { it.stepOrder }
+                    val stepsPerPage = 3
+                    if (sortedSteps.isEmpty()) {
+                        item {
+                            Text(
+                                "No hay pasos registrados para esta receta.",
+                                style = TypographyFoodii.bodyMedium,
+                                color = outlineLight
+                            )
+                        }
+                    } else if (sortedSteps.size > 4) {
+                        item {
+                            val pageCount = (sortedSteps.size + stepsPerPage - 1) / stepsPerPage
+                            val pagerState = rememberPagerState(pageCount = { pageCount })
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = surfaceContainerLight),
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    HorizontalPager(
+                                        state = pagerState,
+                                        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                                        verticalAlignment = Alignment.Top
+                                    ) { pageIndex ->
+                                        val startIndex = pageIndex * stepsPerPage
+                                        val pageSteps = sortedSteps.subList(startIndex, minOf(startIndex + stepsPerPage, sortedSteps.size))
+                                        
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight()
+                                        ) {
+                                            pageSteps.forEachIndexed { idx, step ->
+                                                if (idx > 0) Spacer(Modifier.height(16.dp))
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Surface(
+                                                        color = primaryLight,
+                                                        shape = RoundedCornerShape(4.dp),
+                                                        modifier = Modifier.size(24.dp)
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Text(
+                                                                text = "${step.stepOrder}",
+                                                                color = onPrimaryLight,
+                                                                style = TypographyFoodii.labelSmall,
+                                                                fontWeight = FontWeight.Bold
+                                                            )
+                                                        }
+                                                    }
+                                                    Spacer(Modifier.width(12.dp))
+                                                    Text(
+                                                        text = "PASO ${step.stepOrder}",
+                                                        style = TypographyFoodii.labelLarge,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = primaryLight
+                                                    )
+                                                }
+                                                Spacer(Modifier.height(8.dp))
+                                                Text(
+                                                    text = step.description,
+                                                    style = TypographyFoodii.bodyLarge.copy(lineHeight = 22.sp),
+                                                    textAlign = TextAlign.Justify
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    
+                                    Text(
+                                        text = "Página ${pagerState.currentPage + 1} de $pageCount (Desliza para leer)",
+                                        style = TypographyFoodii.labelSmall,
+                                        color = outlineLight
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        // VISTA DE UNA SOLA TARJETA (Hasta 4 pasos)
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = surfaceContainerLight),
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    sortedSteps.forEachIndexed { index, step ->
+                                        if (index > 0) Spacer(Modifier.height(16.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Surface(
+                                                color = primaryLight,
+                                                shape = RoundedCornerShape(4.dp),
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Text(
+                                                        text = "${step.stepOrder}",
+                                                        color = onPrimaryLight,
+                                                        style = TypographyFoodii.labelSmall,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                            Spacer(Modifier.width(12.dp))
+                                            Text(
+                                                text = "PASO ${step.stepOrder}",
+                                                style = TypographyFoodii.labelLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = primaryLight
+                                            )
+                                        }
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            text = step.description,
+                                            style = TypographyFoodii.bodyLarge.copy(lineHeight = 22.sp),
+                                            textAlign = TextAlign.Justify
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(40.dp))
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text("FIN DE LA RECETA", style = TypographyFoodii.labelSmall, color = outlineLight)
+                        }
                         Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
