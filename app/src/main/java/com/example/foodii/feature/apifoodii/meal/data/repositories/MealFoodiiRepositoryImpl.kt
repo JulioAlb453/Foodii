@@ -5,13 +5,13 @@ import com.example.foodii.core.network.FoodiiAPI
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.CreateMealIngredientPayloadDto
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.CreateMealRequestDto
 import com.example.foodii.feature.apifoodii.meal.data.local.dao.MealRoomDao
+import com.example.foodii.feature.apifoodii.meal.data.local.entity.MealRoomEntity
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.mapper.toDomain as toDomainDto
 import com.example.foodii.feature.apifoodii.meal.data.local.mapper.toDomain as toDomainEntity
 import com.example.foodii.feature.apifoodii.meal.data.local.mapper.toRoomEntity
-import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -26,6 +26,20 @@ class MealFoodiiRepositoryImpl @Inject constructor(
 ) : MealFoodiiRepository {
 
     private val repositoryScope = CoroutineScope(Dispatchers.IO)
+
+    /**
+     * Si el servidor devuelve `image` vacío pero Room ya tenía una URL (p. ej. Cloudinary),
+     * conservamos la local para no perder la foto tras un REPLACE por regresión del API.
+     */
+    private fun mergeImagePreservingLocal(
+        fromApi: FoodiiMeal,
+        existing: MealRoomEntity?,
+    ): FoodiiMeal {
+        if (fromApi.image.isNullOrBlank() && existing != null && !existing.image.isNullOrBlank()) {
+            return fromApi.copy(image = existing.image)
+        }
+        return fromApi
+    }
 
     override fun findAll(userId: String): Flow<List<FoodiiMeal>> {
         return mealDao.getAllMeals()
@@ -47,10 +61,11 @@ class MealFoodiiRepositoryImpl @Inject constructor(
                 if (response.success == true && response.meals != null) {
                     Log.d("SYNC_MEALS", "API devolvió ${response.meals.size} comidas. Guardando...")
                     val meals = response.meals.map { it.toDomainDto() }
-                    
-                    // Limpiamos e insertamos los nuevos datos del servidor
+
                     meals.forEach { meal ->
-                        mealDao.insertMeal(meal.toRoomEntity())
+                        val existing = mealDao.getMealById(meal.id)
+                        val merged = mergeImagePreservingLocal(meal, existing)
+                        mealDao.insertMeal(merged.toRoomEntity())
                     }
                     Log.d("SYNC_MEALS", "Sincronización exitosa.")
                 } else {
@@ -101,8 +116,14 @@ class MealFoodiiRepositoryImpl @Inject constructor(
 
         val response = foodiiApi.createMeal(request)
         val mealDto = response.meal ?: throw Exception("Error al crear comida")
-        val meal = mealDto.toDomainDto()
-        
+        val fromResponse = mealDto.toDomainDto()
+        val meal =
+            when {
+                !fromResponse.image.isNullOrBlank() -> fromResponse
+                !image.isNullOrBlank() -> fromResponse.copy(image = image)
+                else -> fromResponse
+            }
+
         mealDao.insertMeal(meal.toRoomEntity())
         meal
     }
@@ -113,8 +134,11 @@ class MealFoodiiRepositoryImpl @Inject constructor(
         
         return try {
             val response = foodiiApi.getMealById(id)
-            response.meal?.toDomainDto()?.also {
-                mealDao.insertMeal(it.toRoomEntity())
+            response.meal?.toDomainDto()?.let { fromApi ->
+                val existing = mealDao.getMealById(fromApi.id)
+                val merged = mergeImagePreservingLocal(fromApi, existing)
+                mealDao.insertMeal(merged.toRoomEntity())
+                merged
             }
         } catch (e: Exception) {
             null
