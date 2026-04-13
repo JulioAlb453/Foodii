@@ -1,6 +1,5 @@
 package com.example.foodii.feature.apifoodii.meal.presentation.components
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,9 +34,6 @@ fun MealItemCard(
 ) {
     val imageUrl = meal.image.toFullImageUrl()
     val context = LocalContext.current
-
-    // Log para depurar el contenido del objeto meal
-    Log.d("MEAL_CARD", "Mostrando comida: ${meal.name}, Categorías: ${meal.categories}")
 
     Card(
         onClick = onClick,
@@ -107,6 +103,7 @@ fun MealItemCard(
                 )
             }
 
+            // Visualización de categorías
             if (meal.categories.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 FlowRow(
@@ -128,9 +125,6 @@ fun MealItemCard(
                         )
                     }
                 }
-            } else {
-                // Log adicional si no hay categorías
-                Log.w("MEAL_CARD", "La comida ${meal.name} no tiene categorías para mostrar.")
             }
         }
     }

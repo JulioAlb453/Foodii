@@ -32,7 +32,7 @@ class FoodiiFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
-        Log.d(TAG, "Desde: ${remoteMessage.from}")
+        Log.d(TAG, "¡Mensaje FCM recibido!")
 
         val mealId = remoteMessage.data["mealId"]
         val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Foodii"
@@ -43,8 +43,6 @@ class FoodiiFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "Refreshed token: $token")
-        
         scope.launch {
             val user = authRepository.getCurrentUser()
             if (user != null) {
@@ -69,13 +67,13 @@ class FoodiiFirebaseMessagingService : FirebaseMessagingService() {
         val channelId = "fcm_default_channel"
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Asegúrate de tener un icono válido
+            .setSmallIcon(R.drawable.ic_launcher_foreground) 
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -83,12 +81,17 @@ class FoodiiFirebaseMessagingService : FirebaseMessagingService() {
             val channel = NotificationChannel(
                 channelId,
                 "Notificaciones de Foodii",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             )
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
+        // CORRECCIÓN: Usar el hash del mealId como ID de notificación.
+        // Si el mealId es el mismo, la notificación se sobrescribe en lugar de duplicarse.
+        val notificationId = mealId?.hashCode() ?: System.currentTimeMillis().toInt()
+        
+        Log.d(TAG, "Mostrando notificación para mealId: $mealId con ID: $notificationId")
+        notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
     override fun onDestroy() {

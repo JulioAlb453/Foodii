@@ -35,6 +35,8 @@ import com.example.foodii.feature.auth.presentation.AuthViewModelFactory
 import com.example.foodii.feature.auth.presentation.LoginScreen
 import com.example.foodii.feature.auth.presentation.RegisterScreen
 import com.example.foodii.feature.food_preferences.presentation.FoodPreferencesScreen
+import com.example.foodii.feature.food_preferences.domain.model.NotificationCategory
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -56,8 +58,6 @@ class MainActivity : ComponentActivity() {
     ) { isGranted: Boolean ->
         if (isGranted) {
             Log.d("MainActivity", "Permiso de notificaciones concedido")
-        } else {
-            Log.w("MainActivity", "Permiso de notificaciones denegado")
         }
     }
 
@@ -83,6 +83,21 @@ class MainActivity : ComponentActivity() {
                     initialValue = null
                 )
 
+                // LOGICA DE SUSCRIPCIÓN AUTOMÁTICA A TÓPICOS
+                LaunchedEffect(currentUser?.notificationCategoryPreferences) {
+                    currentUser?.notificationCategoryPreferences?.let { prefs ->
+                        Log.d("FCM_SYNC", "Sincronizando suscripciones para: ${currentUser?.username}")
+                        // Desuscribir de todo lo posible primero para limpiar (opcional)
+                        // O simplemente suscribir a lo nuevo
+                        prefs.forEach { slug ->
+                            FirebaseMessaging.getInstance().subscribeToTopic(slug)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) Log.d("FCM_SYNC", "Suscrito a tópico: $slug")
+                                }
+                        }
+                    }
+                }
+
                 LaunchedEffect(widgetMealId, currentUser) {
                     if (currentUser != null && !widgetMealId.isNullOrEmpty()) {
                         navController.navigate("meal_detail/$widgetMealId") {
@@ -107,7 +122,6 @@ class MainActivity : ComponentActivity() {
                         LaunchedEffect(currentUser) {
                             val user = currentUser
                             if (user != null && widgetMealId.isNullOrEmpty()) {
-                                // Solo ir a preferencias si están NULAS (no configuradas nunca)
                                 if (user.notificationCategoryPreferences == null) {
                                     navController.navigate("food_preferences_screen") {
                                         popUpTo("login") { inclusive = true }
