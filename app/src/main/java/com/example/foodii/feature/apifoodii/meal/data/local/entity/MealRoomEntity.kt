@@ -14,4 +14,5 @@ data class MealRoomEntity(
     val image: String?,
     val createdBy: String,
     val ingredientsJson: String,
+    val categoriesJson: String = "[]", // Añadido campo categorías
 )

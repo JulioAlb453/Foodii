@@ -28,9 +28,10 @@ import com.example.compose.*
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
+import com.example.foodii.feature.food_preferences.domain.model.NotificationCategory
 import java.time.LocalDate
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddMealScreen(
     viewModel: MealFoodiiViewModel,
@@ -47,8 +48,17 @@ fun AddMealScreen(
     
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedIngredients by viewModel.selectedIngredients.collectAsStateWithLifecycle()
+    val selectedCategories by viewModel.selectedCategories.collectAsStateWithLifecycle()
     val capturedImageUri by viewModel.capturedImageUri.collectAsStateWithLifecycle()
     val ingredientUiState by ingredientViewModel.uiState.collectAsStateWithLifecycle()
+
+    // Manejo de errores del ViewModel
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+    }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -77,6 +87,7 @@ fun AddMealScreen(
     LaunchedEffect(uiState.successData) {
         if (uiState.successData != null) {
             Toast.makeText(context, "¡Platillo creado con éxito!", Toast.LENGTH_SHORT).show()
+            viewModel.clearSuccessData() // Limpiar para evitar múltiples Toasts
             onBackPressed()
         }
     }
@@ -105,6 +116,11 @@ fun AddMealScreen(
                             Toast.makeText(context, "Ingresa un nombre", Toast.LENGTH_SHORT).show()
                             return@ExtendedFloatingActionButton
                         }
+                        if (selectedIngredients.isEmpty()) {
+                            Toast.makeText(context, "Añade al menos un ingrediente", Toast.LENGTH_SHORT).show()
+                            return@ExtendedFloatingActionButton
+                        }
+                        
                         val ingredientsList = selectedIngredients.map { it.first.id to it.second }
                         viewModel.saveMeal(
                             name = mealName,
@@ -112,8 +128,9 @@ fun AddMealScreen(
                             mealTime = selectedTime,
                             ingredients = ingredientsList,
                             steps = stepsList.toList(),
-                            userId = userId,
-                            imageUri = capturedImageUri
+                            userId = userId, // Verificar que no venga vacío desde MainActivity
+                            imageUri = capturedImageUri,
+                            categories = selectedCategories.toList()
                         )
                     },
                     containerColor = primaryLight,
@@ -148,6 +165,23 @@ fun AddMealScreen(
                                 selected = selectedTime == time,
                                 onClick = { if (!uiState.isLoading) selectedTime = time },
                                 label = { Text(time.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Text("Categorías:", style = MaterialTheme.typography.labelLarge)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        NotificationCategory.ALL.forEach { category ->
+                            FilterChip(
+                                selected = selectedCategories.contains(category.slug),
+                                onClick = { if (!uiState.isLoading) viewModel.onCategoryToggled(category.slug) },
+                                label = { Text(category.label) }
                             )
                         }
                     }

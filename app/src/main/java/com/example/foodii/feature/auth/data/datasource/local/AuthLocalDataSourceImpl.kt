@@ -27,29 +27,32 @@ class AuthLocalDataSourceImpl(private val context: Context) : AuthLocalDataSourc
 
     override suspend fun saveUser(user: User) {
         try {
+            Log.d("AUTH_LOCAL", "Intentando guardar usuario - ID: ${user.id}, Token: ${user.token?.take(10)}...")
             context.dataStore.edit { preferences ->
                 preferences[USER_ID] = user.id
                 preferences[USERNAME] = user.username
                 user.token?.let { preferences[TOKEN] = it }
                 
-                // Guardar las preferencias como JSON string
                 user.notificationCategoryPreferences?.let {
                     preferences[PREFERENCES] = gson.toJson(it)
                 }
             }
-            Log.d("AUTH_LOCAL", "Usuario guardado exitosamente: ${user.username}")
+            Log.d("AUTH_LOCAL", "Usuario guardado exitosamente en DataStore")
         } catch (e: Exception) {
-            Log.e("AUTH_LOCAL", "Error al guardar usuario: ${e.message}")
+            Log.e("AUTH_LOCAL", "Error crítico al guardar en DataStore: ${e.message}")
         }
     }
 
     override fun getUser(): Flow<User?> {
         return context.dataStore.data.map { preferences ->
-            val id = preferences[USER_ID] ?: return@map null
-            val token = preferences[TOKEN] ?: return@map null
+            val id = preferences[USER_ID]
+            val token = preferences[TOKEN]
             val username = preferences[USERNAME] ?: ""
             
-            // Recuperar las preferencias del JSON
+            Log.d("AUTH_LOCAL", "Leyendo usuario de DataStore - ID: $id, Token presente: ${token != null}")
+
+            if (id == null || token == null) return@map null
+            
             val prefsJson = preferences[PREFERENCES]
             val categoryPrefs = if (prefsJson != null) {
                 try {
@@ -69,6 +72,7 @@ class AuthLocalDataSourceImpl(private val context: Context) : AuthLocalDataSourc
     }
 
     override suspend fun clearUser() {
+        Log.d("AUTH_LOCAL", "Limpiando todos los datos de sesión")
         context.dataStore.edit { it.clear() }
     }
 }

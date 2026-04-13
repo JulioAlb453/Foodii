@@ -11,54 +11,74 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.foodii.MainActivity
 import com.example.foodii.R
+import com.example.foodii.feature.auth.domain.repository.AuthRepository
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class FoodiiFirebaseMessagingService : FirebaseMessagingService() {
+
+    @Inject
+    lateinit var authRepository: AuthRepository
+
+    private val job = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.IO + job)
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
         Log.d(TAG, "Desde: ${remoteMessage.from}")
 
-        // Comprobar si el mensaje contiene datos
-        if (remoteMessage.data.isNotEmpty()) {
-            Log.d(TAG, "Carga útil de datos del mensaje: ${remoteMessage.data}")
-        }
+        val mealId = remoteMessage.data["mealId"]
+        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Foodii"
+        val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "¡Echa un vistazo a lo nuevo!"
 
-        // Comprobar si el mensaje contiene una notificación
-        remoteMessage.notification?.let {
-            Log.d(TAG, "Cuerpo de la notificación del mensaje: ${it.body}")
-            sendNotification(it.title ?: "Foodii", it.body ?: "")
-        }
+        sendNotification(title, body, mealId)
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "Refreshed token: $token")
-        // Aquí podrías enviar el token al servidor si fuera necesario fuera del login
+        
+        scope.launch {
+            val user = authRepository.getCurrentUser()
+            if (user != null) {
+                authRepository.updatePreferences(user.notificationCategoryPreferences, token)
+            }
+        }
     }
 
-    private fun sendNotification(title: String, messageBody: String) {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    private fun sendNotification(title: String, messageBody: String, mealId: String?) {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            if (mealId != null) {
+                putExtra("mealId", mealId)
+            }
+        }
+        
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
-            PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         val channelId = "fcm_default_channel"
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_launcher_foreground) // Asegúrate de tener un icono válido
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Desde Android Oreo es necesario el canal de notificación.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -68,7 +88,12 @@ class FoodiiFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(0, notificationBuilder.build())
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
     }
 
     companion object {

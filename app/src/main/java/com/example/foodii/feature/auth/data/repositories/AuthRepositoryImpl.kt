@@ -1,6 +1,7 @@
 package com.example.foodii.feature.auth.data.repositories
 
-import android.util.Log
+import com.example.foodii.core.network.FoodiiAPI
+import com.example.foodii.core.network.UpdatePreferencesRequest
 import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import com.example.foodii.feature.auth.data.datasource.remote.AuthApi
 import com.example.foodii.feature.auth.data.datasource.remote.LoginRequest
@@ -13,7 +14,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
-    private val api: AuthApi,
+    private val authApi: AuthApi,
+    private val foodiiApi: FoodiiAPI,
     private val localDataSource: AuthLocalDataSource
 ) : AuthRepository {
 
@@ -21,10 +23,14 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(username: String, password: String, fcmToken: String?): Result<User> {
         return try {
-            val response = api.login(LoginRequest(username, password, fcmToken))
+            val response = authApi.login(LoginRequest(username, password, fcmToken))
             val user = response.toDomain()
-            localDataSource.saveUser(user)
-            Result.success(user)
+            if (user.id.isNotEmpty()) {
+                localDataSource.saveUser(user)
+                Result.success(user)
+            } else {
+                Result.failure(Exception("Error al mapear usuario"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -32,7 +38,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun register(username: String, password: String, preferences: List<String>): Result<User> {
         return try {
-            val response = api.register(RegisterRequest(username, password, preferences))
+            val response = authApi.register(RegisterRequest(username, password, preferences))
             val user = response.toDomain()
             if (!user.token.isNullOrEmpty()) {
                 localDataSource.saveUser(user)
@@ -49,5 +55,31 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentUser(): User? {
         return localDataSource.getUser().firstOrNull()
+    }
+
+    override suspend fun updatePreferences(preferences: List<String>?, fcmToken: String?): Result<User> {
+        return try {
+            val response = foodiiApi.updatePreferences(UpdatePreferencesRequest(preferences, fcmToken))
+            
+            // IMPORTANTE: Obtenemos el usuario que ya tenemos guardado
+            val currentUser = getCurrentUser()
+            
+            if (response.success == true && currentUser != null) {
+                // NO usamos response.toDomain() aquí porque sabemos que viene nulo.
+                // Actualizamos el usuario existente con los nuevos datos
+                val updatedUser = currentUser.copy(
+                    notificationCategoryPreferences = preferences,
+                    fcmToken = fcmToken ?: currentUser.fcmToken
+                )
+                localDataSource.saveUser(updatedUser)
+                Result.success(updatedUser)
+            } else if (currentUser != null) {
+                Result.success(currentUser)
+            } else {
+                Result.failure(Exception("No se encontró una sesión activa"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

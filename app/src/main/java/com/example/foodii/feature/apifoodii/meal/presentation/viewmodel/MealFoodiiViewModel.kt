@@ -76,6 +76,9 @@ class MealFoodiiViewModel(
     private val _selectedIngredients = MutableStateFlow<List<Pair<Ingredient, Int>>>(emptyList())
     val selectedIngredients = _selectedIngredients.asStateFlow()
 
+    private val _selectedCategories = MutableStateFlow<Set<String>>(emptySet())
+    val selectedCategories = _selectedCategories.asStateFlow()
+
     private val _capturedImageUri = MutableStateFlow<Uri?>(null)
     val capturedImageUri = _capturedImageUri.asStateFlow()
 
@@ -257,6 +260,12 @@ class MealFoodiiViewModel(
         _selectedIngredients.value = currentList
     }
 
+    fun onCategoryToggled(slug: String) {
+        val current = _selectedCategories.value
+        val updated = if (current.contains(slug)) current - slug else current + slug
+        _selectedCategories.value = updated
+    }
+
     fun saveMeal(
         name: String,
         date: LocalDate,
@@ -264,18 +273,26 @@ class MealFoodiiViewModel(
         ingredients: List<Pair<String, Int>>,
         steps: List<String>,
         userId: String,
-        imageUri: Uri? = null
+        imageUri: Uri? = null,
+        categories: List<String> = emptyList()
     ) {
+        // VALIDACIÓN PREVIA: Si el userId está vacío, ni siquiera empezamos el proceso
+        if (userId.isBlank()) {
+            _uiState.update { it.copy(error = "No se pudo identificar al usuario. Inicia sesión de nuevo.") }
+            return
+        }
+
         _uiState.update { it.copy(isLoading = true, error = null, successData = null) }
+        
         viewModelScope.launch {
             try {
+                // Solo subimos la imagen si el userId es válido
                 var imageUrl: String? = null
                 if (imageUri != null) {
                     val uploadResult = imageRepository.uploadImage(imageUri)
                     imageUrl = uploadResult.getOrNull()
                 }
 
-                // AHORA PASAMOS imageUrl AL USE CASE
                 val result = saveFoodiiMealUseCase(
                     name = name,
                     date = date,
@@ -283,7 +300,8 @@ class MealFoodiiViewModel(
                     ingredientsRequest = ingredients,
                     steps = steps,
                     userId = userId,
-                    image = imageUrl
+                    image = imageUrl,
+                    categories = categories
                 )
 
                 _uiState.update { currentState ->

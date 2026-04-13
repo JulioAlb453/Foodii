@@ -28,6 +28,7 @@ data class FoodiiMealDto(
     @SerializedName("image") val image: String?,
     @SerializedName(value = "createdBy", alternate = ["CreatedBy"]) val createdBy: String?,
     @SerializedName("createdAt") val createdAt: String?,
+    @SerializedName("categories") val categories: List<String>? = null // Añadido campo categorías
 )
 
 data class FoodiiMealIngredientDto(
@@ -49,5 +50,6 @@ data class CreateMealRequestDto(
     @SerializedName("mealTime") val mealTime: String,
     @SerializedName("ingredients") val ingredients: List<CreateMealIngredientPayloadDto>,
     @SerializedName("steps") val steps: List<String>,
-    @SerializedName("image") val image: String? // Añadido campo image
+    @SerializedName("image") val image: String?,
+    @SerializedName("categories") val categories: List<String> = emptyList()
 )

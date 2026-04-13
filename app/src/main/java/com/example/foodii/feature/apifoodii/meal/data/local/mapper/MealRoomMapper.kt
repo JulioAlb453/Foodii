@@ -27,6 +27,13 @@ fun MealRoomEntity.toDomain(): FoodiiMeal {
         emptyList()
     }
 
+    val categoriesType = object : TypeToken<List<String>>() {}.type
+    val categories: List<String> = try {
+        gson.fromJson(this.categoriesJson, categoriesType) ?: emptyList()
+    } catch (_: Exception) {
+        emptyList()
+    }
+
     return FoodiiMeal(
         id = this.id,
         name = this.name,
@@ -37,6 +44,7 @@ fun MealRoomEntity.toDomain(): FoodiiMeal {
         steps = steps,
         image = this.image,
         ingredients = ingredients,
+        categories = categories
     )
 }
 
@@ -51,5 +59,6 @@ fun FoodiiMeal.toRoomEntity(): MealRoomEntity {
         image = this.image,
         createdBy = this.createdBy,
         ingredientsJson = gson.toJson(this.ingredients),
+        categoriesJson = gson.toJson(this.categories)
     )
 }

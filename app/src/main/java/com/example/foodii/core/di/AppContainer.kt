@@ -84,7 +84,7 @@ class AppContainer(context: Context, val authLocalDataSource: AuthLocalDataSourc
     }
 
     val authRepository: AuthRepository by lazy {
-        AuthRepositoryImpl(authApi, authLocalDataSource)
+        AuthRepositoryImpl(authApi, foodiiApi, authLocalDataSource)
     }
 
     val plannerRepository: PlannerRepository by lazy {

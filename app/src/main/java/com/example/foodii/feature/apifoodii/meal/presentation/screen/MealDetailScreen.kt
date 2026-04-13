@@ -1,13 +1,12 @@
 package com.example.foodii.feature.apifoodii.meal.presentation.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restaurant
@@ -31,10 +30,11 @@ import coil.compose.AsyncImage
 import com.example.compose.*
 import com.example.foodii.core.utils.toFullImageUrl
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
+import com.example.foodii.feature.food_preferences.domain.model.NotificationCategory
 import com.example.ui.theme.TypographyFoodii
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun MealDetailScreen(
     viewModel: MealFoodiiViewModel,
@@ -149,6 +149,37 @@ fun MealDetailScreen(
                                         text = meal!!.mealTime.name.lowercase().replaceFirstChar { it.uppercase() },
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = onPrimaryLight
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // SECCIÓN DE CATEGORÍAS
+                    if (meal!!.categories.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Categorías",
+                                style = TypographyFoodii.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = onBackgroundLight
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                meal!!.categories.forEach { slug ->
+                                    val category = NotificationCategory.ALL.find { it.slug == slug }
+                                    val label = category?.label ?: slug
+                                    AssistChip(
+                                        onClick = {},
+                                        label = { Text(label) },
+                                        colors = AssistChipDefaults.assistChipColors(
+                                            labelColor = primaryLight
+                                        ),
+                                        border = BorderStroke(1.dp, primaryLight.copy(alpha = 0.5f))
                                     )
                                 }
                             }

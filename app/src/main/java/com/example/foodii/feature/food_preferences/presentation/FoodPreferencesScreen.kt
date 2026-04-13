@@ -34,10 +34,10 @@ fun FoodPreferencesScreen(
                 ) {
                     Button(
                         onClick = {
-                            viewModel.savePreferencesLocally(onDone = onNavigateToHome)
+                            viewModel.savePreferences(onDone = onNavigateToHome)
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = uiState.selectedCategories.isNotEmpty() && !uiState.isLoading,
+                        enabled = uiState.selectedSlugs.isNotEmpty() && !uiState.isLoading,
                         shape = MaterialTheme.shapes.medium
                     ) {
                         if (uiState.isLoading) {
@@ -73,7 +73,7 @@ fun FoodPreferencesScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Selecciona tus preferencias para personalizar tu experiencia",
+                text = "Selecciona tus preferencias para personalizar tu experiencia y recibir notificaciones",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -88,9 +88,9 @@ fun FoodPreferencesScreen(
             ) {
                 items(viewModel.categories) { category ->
                     FoodCategoryCard(
-                        name = category,
-                        isSelected = uiState.selectedCategories.contains(category),
-                        onClick = { viewModel.onCategoryToggled(category) }
+                        name = category.label,
+                        isSelected = uiState.selectedSlugs.contains(category.slug),
+                        onClick = { viewModel.onCategoryToggled(category.slug) }
                     )
                 }
             }

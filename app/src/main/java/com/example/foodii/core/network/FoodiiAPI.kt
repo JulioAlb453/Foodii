@@ -6,10 +6,12 @@ import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.mo
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.CreateMealRequestDto
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.FoodiiMealResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.SingleMealResponse
+import com.example.foodii.feature.auth.data.datasource.remote.model.AuthResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PATCH
 import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -55,4 +57,14 @@ interface FoodiiAPI {
     suspend fun deleteIngredientAPI(
         @Path("id") id: String,
     ): SingleIngredientResponse
+
+    @PATCH("api/users/preferences")
+    suspend fun updatePreferences(
+        @Body request: UpdatePreferencesRequest
+    ): AuthResponse
 }
+
+data class UpdatePreferencesRequest(
+    val notificationCategoryPreferences: List<String>?,
+    val fcmToken: String? = null
+)

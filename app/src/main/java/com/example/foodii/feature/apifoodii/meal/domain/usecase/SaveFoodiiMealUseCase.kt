@@ -16,7 +16,8 @@ class SaveFoodiiMealUseCase(
         ingredientsRequest: List<Pair<String, Int>>,
         steps: List<String>,
         userId: String,
-        image: String? = null // Añadido parámetro opcional
+        image: String? = null,
+        categories: List<String> = emptyList() // Añadido soporte para categorías
     ) = runCatching {
         if (name.trim().length < 2) {
             error("El nombre de la comida debe tener al menos 2 caracteres")
@@ -41,7 +42,8 @@ class SaveFoodiiMealUseCase(
             ingredients = ingredientsRequest,
             steps = steps,
             userId = userId,
-            image = image // Pasar la imagen
+            image = image,
+            categories = categories // Pasar categorías al repositorio
         ).getOrElse { throw it }
     }
 }

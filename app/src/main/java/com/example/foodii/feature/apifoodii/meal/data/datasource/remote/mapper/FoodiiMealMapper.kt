@@ -13,7 +13,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 fun FoodiiMealDto.toDomain(): FoodiiMeal {
-    Log.d("MAPPER", "Mapeando meal: ${this.name}, pasos recibidos: ${this.steps?.size ?: 0}")
+    // LOG CRÍTICO: Ver qué llega de la API
+    Log.d("MAPPER_API", "Mapeando: ${this.name}, Categorías en DTO: ${this.categories}")
     
     val stepsDomain = this.steps.orEmpty()
         .mapIndexed { index, dto ->
@@ -43,6 +44,7 @@ fun FoodiiMealDto.toDomain(): FoodiiMeal {
         steps = stepsDomain,
         image = this.image,
         ingredients = this.ingredients?.map { it.toDomain() } ?: emptyList(),
+        categories = this.categories ?: emptyList()
     )
 }
 
@@ -68,6 +70,7 @@ fun FoodiiMeal.toDto(): FoodiiMealDto {
         createdBy = this.createdBy,
         createdAt = null,
         ingredients = this.ingredients.map { it.toDto() },
+        categories = this.categories
     )
 }
 

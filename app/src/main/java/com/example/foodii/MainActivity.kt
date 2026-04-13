@@ -1,10 +1,16 @@
 package com.example.foodii
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -45,9 +51,21 @@ class MainActivity : ComponentActivity() {
 
     lateinit var appContainer: AppContainer
 
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Log.d("MainActivity", "Permiso de notificaciones concedido")
+        } else {
+            Log.w("MainActivity", "Permiso de notificaciones denegado")
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appContainer = AppContainer(this, authLocalDataSource)
+
+        askNotificationPermission()
 
         WidgetUpdateWorker.schedule(this)
         val testRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
@@ -89,7 +107,8 @@ class MainActivity : ComponentActivity() {
                         LaunchedEffect(currentUser) {
                             val user = currentUser
                             if (user != null && widgetMealId.isNullOrEmpty()) {
-                                if (user.notificationCategoryPreferences.isNullOrEmpty()) {
+                                // Solo ir a preferencias si están NULAS (no configuradas nunca)
+                                if (user.notificationCategoryPreferences == null) {
                                     navController.navigate("food_preferences_screen") {
                                         popUpTo("login") { inclusive = true }
                                     }
@@ -232,6 +251,16 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
     }
