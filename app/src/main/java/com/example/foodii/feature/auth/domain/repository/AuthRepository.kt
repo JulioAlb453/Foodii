@@ -14,4 +14,5 @@ interface AuthRepository {
     suspend fun logout()
     suspend fun getCurrentUser(): User?
     suspend fun updatePreferences(preferences: List<String>?, fcmToken: String? = null): Result<User>
+    suspend fun syncProfile(): Result<User>
 }

@@ -11,13 +11,16 @@ data class AuthResponse(
 
 data class AuthDataDto(
     @SerializedName("user") val user: UserDto?,
-    @SerializedName("token") val token: String?
+    @SerializedName("token") val token: String?,
+    // Soporte para perfil plano (MySQL/Express común)
+    @SerializedName("id", alternate = ["userId", "_id", "ID"]) val id: Any? = null,
+    @SerializedName("username") val username: String? = null,
+    @SerializedName("notificationCategoryPreferences", alternate = ["preferences"]) val preferences: Any? = null
 )
 
 data class UserDto(
-    // Aceptamos Any para que funcione si MySQL devuelve un número (1) o un string ("1")
     @SerializedName("id", alternate = ["userId", "_id", "ID"]) val id: Any?,
     @SerializedName("username") val username: String?,
-    @SerializedName("notificationCategoryPreferences") val preferences: List<String>? = null,
+    @SerializedName("notificationCategoryPreferences", alternate = ["preferences", "category_preferences", "categoryPreferences"]) val preferences: Any? = null,
     @SerializedName("createdAt") val createdAt: String?
 )

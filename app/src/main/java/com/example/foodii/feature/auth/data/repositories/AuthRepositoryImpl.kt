@@ -1,5 +1,6 @@
 package com.example.foodii.feature.auth.data.repositories
 
+import android.util.Log
 import com.example.foodii.core.network.FoodiiAPI
 import com.example.foodii.core.network.UpdatePreferencesRequest
 import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
@@ -23,15 +24,30 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(username: String, password: String, fcmToken: String?): Result<User> {
         return try {
-            val response = authApi.login(LoginRequest(username, password, fcmToken))
-            val user = response.toDomain()
-            if (user.id.isNotEmpty()) {
-                localDataSource.saveUser(user)
-                Result.success(user)
+            Log.d("AUTH_SYNC", "Iniciando login para: $username")
+            val loginResponse = authApi.login(LoginRequest(username, password, fcmToken))
+            val loginUser = loginResponse.toDomain()
+            
+            if (loginUser.id.isNotEmpty() && !loginUser.token.isNullOrEmpty()) {
+                Log.d("AUTH_SYNC", "Login exitoso, obteniendo perfil para verificar categorías...")
+                
+                val profileResponse = authApi.getProfile("Bearer ${loginUser.token}")
+                val profileUser = profileResponse.toDomain()
+                
+                Log.d("AUTH_SYNC", "Categorías recuperadas del servidor: ${profileUser.notificationCategoryPreferences}")
+
+                val finalUser = profileUser.copy(
+                    token = loginUser.token,
+                    fcmToken = fcmToken ?: profileUser.fcmToken
+                )
+                
+                localDataSource.saveUser(finalUser)
+                Result.success(finalUser)
             } else {
-                Result.failure(Exception("Error al mapear usuario"))
+                Result.failure(Exception("Credenciales inválidas"))
             }
         } catch (e: Exception) {
+            Log.e("AUTH_SYNC", "Error durante el proceso de login/sync: ${e.message}")
             Result.failure(e)
         }
     }
@@ -60,15 +76,12 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun updatePreferences(preferences: List<String>?, fcmToken: String?): Result<User> {
         return try {
             val response = foodiiApi.updatePreferences(UpdatePreferencesRequest(preferences, fcmToken))
-            
-            // IMPORTANTE: Obtenemos el usuario que ya tenemos guardado
             val currentUser = getCurrentUser()
             
             if (response.success == true && currentUser != null) {
-                // NO usamos response.toDomain() aquí porque sabemos que viene nulo.
-                // Actualizamos el usuario existente con los nuevos datos
+                Log.d("AUTH_SYNC", "Preferencias actualizadas en servidor: $preferences")
                 val updatedUser = currentUser.copy(
-                    notificationCategoryPreferences = preferences,
+                    notificationCategoryPreferences = preferences ?: emptyList(),
                     fcmToken = fcmToken ?: currentUser.fcmToken
                 )
                 localDataSource.saveUser(updatedUser)
@@ -76,7 +89,32 @@ class AuthRepositoryImpl @Inject constructor(
             } else if (currentUser != null) {
                 Result.success(currentUser)
             } else {
-                Result.failure(Exception("No se encontró una sesión activa"))
+                Result.failure(Exception("Sesión no encontrada"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun syncProfile(): Result<User> {
+        return try {
+            val currentUser = getCurrentUser()
+            val tokenHeader = if (currentUser?.token != null) "Bearer ${currentUser.token}" else null
+            
+            val response = authApi.getProfile(tokenHeader)
+            val apiUser = response.toDomain()
+
+            Log.d("AUTH_SYNC", "Sincronizando perfil. Categorías: ${apiUser.notificationCategoryPreferences}")
+
+            if (currentUser != null && apiUser.id.isNotEmpty()) {
+                val syncedUser = apiUser.copy(token = currentUser.token)
+                localDataSource.saveUser(syncedUser)
+                Result.success(syncedUser)
+            } else if (apiUser.id.isNotEmpty()) {
+                localDataSource.saveUser(apiUser)
+                Result.success(apiUser)
+            } else {
+                Result.failure(Exception("Perfil vacío"))
             }
         } catch (e: Exception) {
             Result.failure(e)
