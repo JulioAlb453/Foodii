@@ -25,10 +25,11 @@ data class FoodiiMealDto(
     @SerializedName("ingredients") val ingredients: List<FoodiiMealIngredientDto>?,
     @SerializedName("totalCalories") val totalCalories: Double?,
     @SerializedName("steps") val steps: List<MealStepDto>?,
-    @SerializedName("image") val image: String?,
-    @SerializedName(value = "createdBy", alternate = ["CreatedBy"]) val createdBy: String?,
+    // Alias para asegurar compatibilidad con MySQL
+    @SerializedName("image", alternate = ["imagen", "imageUrl", "photo"]) val image: String?,
+    @SerializedName(value = "createdBy", alternate = ["CreatedBy", "userId"]) val createdBy: String?,
     @SerializedName("createdAt") val createdAt: String?,
-    @SerializedName("categories") val categories: List<String>? = null // Añadido campo categorías
+    @SerializedName("categories") val categories: List<String>? = null
 )
 
 data class FoodiiMealIngredientDto(
