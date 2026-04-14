@@ -10,7 +10,7 @@ plugins {
 val localPropertiesFile = rootProject.file("local.properties")
 val pexelsKey = if (localPropertiesFile.exists()) {
     localPropertiesFile.readLines()
-        .firstOrNull { it.startsWith("PEXELS_API_KEY=PEXELS_API_KEY=") }
+        .firstOrNull { it.startsWith("") }
         ?.substringAfter("=") ?: ""
 } else ""
 
