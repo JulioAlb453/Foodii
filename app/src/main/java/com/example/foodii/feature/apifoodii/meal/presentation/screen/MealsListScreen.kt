@@ -9,14 +9,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,28 +43,37 @@ fun MealsListScreen(
     userId: String,
     onViewSummaryClick: () -> Unit,
     onIngredientsClick: () -> Unit,
-    onAddMealClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onMealClick: (String) -> Unit
+    onMealClick: (String) -> Unit,
+    onAddMealClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsState()
-    val meals by viewModel.allMeals.collectAsState()
-
+    
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { _ -> }
-
-    LaunchedEffect(Unit) {
-        viewModel.loadAllMeals(userId)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+    ) { isGranted ->
+        if (!isGranted) {
         }
     }
 
     FoodiiTheme( dynamicColor = false) {
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val meals by viewModel.allMeals.collectAsStateWithLifecycle()
+
+        LaunchedEffect(Unit) {
+            viewModel.loadAllMeals(userId)
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
+
         Scaffold(
             containerColor = backgroundLight,
             topBar = {
@@ -73,36 +85,44 @@ fun MealsListScreen(
                     ),
                     title = { Text("Platillos Disponibles", fontWeight = FontWeight.Bold) },
                     actions = {
+                        IconButton(onClick = onAddMealClick) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Nuevo platillo",
+                                tint = onPrimaryDark
+                            )
+                        }
                         IconButton(onClick = onIngredientsClick) {
-                            Icon(Icons.Default.ShoppingBasket, contentDescription = "Ingredientes", tint = onPrimaryDark)
+                            Icon(
+                                imageVector = Icons.Default.ShoppingBasket,
+                                contentDescription = "Ingredientes",
+                                tint = onPrimaryDark
+                            )
                         }
                         IconButton(onClick = onViewSummaryClick) {
-                            Icon(Icons.Default.CalendarMonth, contentDescription = "Ver Agenda", tint = onPrimaryDark)
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Ver Agenda",
+                                tint = onPrimaryDark
+                            )
                         }
                         IconButton(onClick = onLogoutClick) {
-                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar Sesión", tint = onPrimaryDark)
+                            Icon(
+                                imageVector = Icons.Default.Logout,
+                                contentDescription = "Cerrar Sesión",
+                                tint = onPrimaryDark
+                            )
                         }
                     }
                 )
             },
             floatingActionButton = {
-                Column(horizontalAlignment = Alignment.End) {
-                    SmallFloatingActionButton(
-                        onClick = { viewModel.sendTestNotification(userId) },
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    ) {
-                        Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
-                    }
-
-                    FloatingActionButton(
-                        onClick = onAddMealClick,
-                        containerColor = primaryDark,
-                        contentColor = onPrimaryDark
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Añadir Platillo")
-                    }
+                FloatingActionButton(
+                    onClick = { viewModel.sendTestNotification(userId) },
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ) {
+                    Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
                 }
             }
         ) { padding ->
@@ -126,7 +146,10 @@ fun MealsListScreen(
                                 tint = outlineLight
                             )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("No hay platillos creados", color = outlineLight)
+                            Text(
+                                "No hay platillos creados",
+                                color = outlineLight
+                            )
                         }
                     }
                     else -> {

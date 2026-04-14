@@ -8,7 +8,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +30,8 @@ import com.example.foodii.feature.mealdb.presentation.viewmodel.PlannerViewModel
 import com.example.ui.theme.TypographyFoodii
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +39,7 @@ fun PlannerScreen(
     viewModel: PlannerViewModel = hiltViewModel(),
     onBackPressed: () -> Unit
 ) {
-    val meals by viewModel.plannedMeals.collectAsState()
+    val meals by viewModel.plannedMeals.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = backgroundLight,
@@ -80,13 +85,14 @@ fun PlannerScreen(
 
 @Composable
 fun PlannedMealItem(planned: PlannedMealEntity) {
-    var expanded by remember { mutableStateOf(false) }
+    val expandedFlow = remember { MutableStateFlow(false) }
+    val expanded by expandedFlow.collectAsStateWithLifecycle()
 
     Column {
         DateHeader(planned.date)
         
         Card(
-            onClick = { expanded = !expanded },
+            onClick = { expandedFlow.update { !it } },
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.small,
             colors = CardDefaults.cardColors(
@@ -98,7 +104,7 @@ fun PlannedMealItem(planned: PlannedMealEntity) {
                 MealCard(
                     name = planned.name,
                     imageUrl = planned.imageUrl,
-                    onClick = { expanded = !expanded }
+                    onClick = { expandedFlow.update { !it } }
                 )
 
                 AnimatedVisibility(visible = expanded) {

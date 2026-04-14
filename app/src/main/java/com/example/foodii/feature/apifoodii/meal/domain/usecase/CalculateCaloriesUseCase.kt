@@ -2,20 +2,20 @@ package com.example.foodii.feature.apifoodii.meal.domain.usecase
 
 import com.example.foodii.feature.apifoodii.ingredient.domain.entity.CaloriesSummary
 import com.example.foodii.feature.apifoodii.ingredient.domain.entity.MealsByTime
-import com.example.foodii.feature.apifoodii.meal.domain.repository.FoodiiMealRepository
+import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlin.math.roundToInt
+import javax.inject.Inject
 
-class CalculateCaloriesUseCase(
-    private val repository: FoodiiMealRepository
+class CalculateCaloriesUseCase @Inject constructor(
+    private val repository: MealFoodiiRepository
 ) {
 
     operator fun invoke(userId: String, date: String? = null): Flow<CaloriesSummary> {
         val mealsFlow = if (date != null) {
-            repository.findByDate(date)
+            repository.findByDate(date, userId)
         } else {
-            repository.findAll()
+            repository.findAll(userId)
         }
         
         return mealsFlow.map { meals ->

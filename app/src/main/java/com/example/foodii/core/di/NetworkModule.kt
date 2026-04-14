@@ -1,6 +1,7 @@
 package com.example.foodii.core.di
 
 import android.content.Context
+import com.cloudinary.android.MediaManager
 import com.example.foodii.BuildConfig
 import com.example.foodii.core.network.AuthInterceptor
 import com.example.foodii.core.network.FoodiiAPI
@@ -116,6 +117,20 @@ object NetworkModule {
     @Singleton
     fun provideMealDbApi(@MealDbRetrofit retrofit: Retrofit): MealDbApi {
         return retrofit.create(MealDbApi::class.java)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideMediaManager(@ApplicationContext context: Context): MediaManager {
+        val config: Map<String, Any> = mapOf(
+            "cloud_name" to BuildConfig.CLOUDINARY_CLOUD_NAME
+        )
+        try {
+            MediaManager.init(context, config)
+        } catch (e: IllegalStateException) {
+        }
+        return MediaManager.get()
     }
 }
 

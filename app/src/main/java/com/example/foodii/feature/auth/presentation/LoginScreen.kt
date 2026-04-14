@@ -6,7 +6,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -18,6 +22,13 @@ import com.example.foodii.R
 import com.example.foodii.feature.auth.presentation.components.AuthButton
 import com.example.foodii.feature.auth.presentation.components.AuthTextField
 import com.example.foodii.feature.auth.presentation.components.ErrorDialog
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+
+private data class LoginFormState(
+    val username: String = "",
+    val password: String = "",
+)
 
 @Composable
 fun LoginScreen(
@@ -25,10 +36,9 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val formFlow = remember { MutableStateFlow(LoginFormState()) }
+    val form by formFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -72,15 +82,15 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             AuthTextField(
-                value = username,
-                onValueChange = { username = it },
+                value = form.username,
+                onValueChange = { formFlow.update { s -> s.copy(username = it) } },
                 label = "Nombre de usuario",
                 icon = Icons.Default.Person
             )
 
             AuthTextField(
-                value = password,
-                onValueChange = { password = it },
+                value = form.password,
+                onValueChange = { formFlow.update { s -> s.copy(password = it) } },
                 label = "Contraseña",
                 icon = Icons.Default.Lock,
                 isPassword = true
@@ -88,24 +98,21 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botón de Login
             AuthButton(
                 text = "Iniciar Sesión",
-                onClick = { viewModel.login(username, password) },
+                onClick = { viewModel.login(form.username, form.password) },
                 isLoading = uiState.isLoading,
-                enabled = username.isNotEmpty() && password.isNotEmpty()
+                enabled = form.username.isNotEmpty() && form.password.isNotEmpty()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón para ir a Registro
             TextButton(onClick = onNavigateToRegister) {
                 Text(text = "¿No tienes cuenta? Regístrate aquí")
             }
         }
     }
 
-    // Mostrar diálogo de error si existe
     uiState.error?.let { message ->
         ErrorDialog(
             message = message,

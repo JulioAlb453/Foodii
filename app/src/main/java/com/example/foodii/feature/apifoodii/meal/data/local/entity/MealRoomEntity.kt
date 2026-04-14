@@ -10,8 +10,9 @@ data class MealRoomEntity(
     val date: String,
     val mealTime: String,
     val totalCalories: Double,
-    val instructions: String,
+    val stepsJson: String,
+    val image: String?,
     val createdBy: String,
     val ingredientsJson: String,
-    val image: String? = null
+    val categoriesJson: String = "[]", // Añadido campo categorías
 )

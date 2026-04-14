@@ -3,8 +3,9 @@ package com.example.foodii.feature.apifoodii.meal.domain.usecase
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
+import javax.inject.Inject
 
-class GetFoodiiMealByIdUseCase(
+class GetFoodiiMealByIdUseCase @Inject constructor(
     private val mealRepository: MealFoodiiRepository,
     private val ingredientRepository: IngredientRepository
 ) {

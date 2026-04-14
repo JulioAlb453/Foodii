@@ -4,21 +4,28 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.glance.*
-import androidx.glance.action.clickable
-import androidx.glance.appwidget.*
-import androidx.glance.appwidget.action.actionStartActivity
+import androidx.compose.ui.unit.sp
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.background
 import androidx.glance.layout.*
 import androidx.glance.text.*
 import androidx.glance.unit.ColorProvider
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.*
+import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.color.ColorProvider
 import com.example.foodii.R
 import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
 import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
 import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
-import com.example.foodii.core.service.worker.WidgetUpdateWorker
 import com.example.foodii.MainActivity
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -59,10 +66,7 @@ class MealReminderWidget : GlanceAppWidget() {
             emptyList()
         }
 
-        val nextPlanned = plannedMeals.firstOrNull()
-        
-        val nextPlanned = plannedMeals.sortedBy { it.date }.firstOrNull()
-
+        val nextPlanned = plannedMeals.minByOrNull { it.date }
         val fullMealDetail = nextPlanned?.let { mealRepository.getMealById(it.mealId, userId) }
 
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -107,36 +111,39 @@ class MealReminderWidget : GlanceAppWidget() {
             else -> R.color.night_color
         }
 
-        Box(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .appWidgetBackground()
-                .background(backgroundColorRes)
-                .cornerRadius(16.dp)
-                .clickable(actionStartActivity(intent))
-        ) {
-            bitmap?.let {
-                Image(
-                    provider = ImageProvider(it),
-                    contentDescription = null,
-                    modifier = GlanceModifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
+        // Usamos la forma pública de ColorProvider para evitar restricciones de "library group"
+        val whiteColor = ColorProvider(day = Color.White, night = Color.White)
+        val secondaryTextColor = ColorProvider(day = Color(0xFFCCCCCC), night = Color(0xFFCCCCCC))
+
+        GlanceTheme {
             Box(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .background(R.color.widget_overlay)
-            ) {}
-
-            Row(
-                modifier = GlanceModifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.Vertical.CenterVertically
+                    .appWidgetBackground()
+                    .background(backgroundColorRes)
+                    .cornerRadius(16.dp)
+                    .clickable(actionStartActivity(intent))
             ) {
+                bitmap?.let {
+                    Image(
+                        provider = ImageProvider(it),
+                        contentDescription = null,
+                        modifier = GlanceModifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                
+                Box(
+                    modifier = GlanceModifier
+                        .fillMaxSize()
+                        .background(R.color.widget_overlay)
+                ) {}
+
                 Column(
-                    modifier = GlanceModifier.defaultWeight()
+                    modifier = GlanceModifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.Vertical.CenterVertically
                 ) {
                     if (planned != null) {
                         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
@@ -148,37 +155,45 @@ class MealReminderWidget : GlanceAppWidget() {
                             maxLines = 1,
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
-                                color = ColorProvider(R.color.white)
+                                color = whiteColor,
+                                fontSize = 18.sp
                             )
                         )
 
+                        Spacer(modifier = GlanceModifier.height(4.dp))
 
-                        val instructions = if (detail != null && detail.instructions.isNotEmpty()) {
-                            detail.instructions
+                        val instructionsText = if (detail != null && detail.stepsPlainText().isNotEmpty()) {
+                            detail.stepsPlainText()
                         } else {
                             "Toca para ver la receta"
                         }
 
-
                         Text(
-                            text = detail?.instructions ?: "Toca para ver la receta",
-                            maxLines = 1,
+                            text = instructionsText,
+                            maxLines = 2,
                             style = TextStyle(
-                                color = ColorProvider(R.color.white)
+                                color = secondaryTextColor,
+                                fontSize = 14.sp
                             )
                         )
+
+                        Spacer(modifier = GlanceModifier.height(8.dp))
 
                         Text(
                             text = "Próxima comida • $dateString",
                             style = TextStyle(
-                                color = ColorProvider(R.color.white)
+                                color = whiteColor,
+                                fontSize = 12.sp,
+                                fontStyle = FontStyle.Italic
                             )
                         )
                     } else {
                         Text(
                             text = "Sin comidas agendadas",
                             style = TextStyle(
-                                color = ColorProvider(R.color.white)
+                                color = whiteColor,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 16.sp
                             )
                         )
                     }

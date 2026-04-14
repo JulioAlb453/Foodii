@@ -9,7 +9,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -18,6 +21,13 @@ import com.example.compose.*
 import com.example.foodii.feature.apifoodii.ingredient.presentation.components.CreateIngredientDialog
 import com.example.foodii.feature.apifoodii.ingredient.presentation.components.IngredientItemCard
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+
+private data class IngredientsListUiState(
+    val searchQuery: String = "",
+    val showCreateDialog: Boolean = false,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,26 +36,26 @@ fun IngredientsScreen(
     onBackPressed: () -> Unit
 ) {
     FoodiiTheme(darkTheme = true, dynamicColor = false) {
-        val uiState by viewModel.uiState.collectAsState()
-        var searchQuery by remember { mutableStateOf("") }
-        var showCreateDialog by remember { mutableStateOf(false) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val listUiFlow = remember { MutableStateFlow(IngredientsListUiState()) }
+        val listUi by listUiFlow.collectAsStateWithLifecycle()
 
-        val filteredIngredients = remember(searchQuery, uiState.ingredients) {
-            if (searchQuery.isBlank()) {
+        val filteredIngredients = remember(listUi.searchQuery, uiState.ingredients) {
+            if (listUi.searchQuery.isBlank()) {
                 uiState.ingredients
             } else {
-                uiState.ingredients.filter { 
-                    it.name.contains(searchQuery, ignoreCase = true) 
+                uiState.ingredients.filter {
+                    it.name.contains(listUi.searchQuery, ignoreCase = true)
                 }
             }
         }
 
-        if (showCreateDialog) {
+        if (listUi.showCreateDialog) {
             CreateIngredientDialog(
-                onDismiss = { showCreateDialog = false },
+                onDismiss = { listUiFlow.update { it.copy(showCreateDialog = false) } },
                 onConfirm = { name, calories ->
                     viewModel.createIngredient(name, calories)
-                    showCreateDialog = false
+                    listUiFlow.update { it.copy(showCreateDialog = false) }
                 }
             )
         }
@@ -54,7 +64,7 @@ fun IngredientsScreen(
             containerColor = backgroundLight,
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = { showCreateDialog = true },
+                    onClick = { listUiFlow.update { it.copy(showCreateDialog = true) } },
                     containerColor = primaryLight,
                     contentColor = onPrimaryLight
                 ) {
@@ -76,14 +86,14 @@ fun IngredientsScreen(
                             }
                         }
                     )
-                    
+
                     Surface(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
+                            value = listUi.searchQuery,
+                            onValueChange = { listUiFlow.update { s -> s.copy(searchQuery = it) } },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
@@ -93,7 +103,7 @@ fun IngredientsScreen(
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary) },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = onPrimaryDark,
-                                unfocusedBorderColor =onPrimaryDark,
+                                unfocusedBorderColor = onPrimaryDark,
                                 focusedTextColor = primaryLight,
                                 unfocusedTextColor = primaryDark,
                                 cursorColor = onPrimaryLight
@@ -143,7 +153,7 @@ fun IngredientsScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = if (searchQuery.isEmpty()) "No hay ingredientes" else "No se encontraron resultados",
+                                text = if (listUi.searchQuery.isEmpty()) "No hay ingredientes" else "No se encontraron resultados",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.outline
                             )

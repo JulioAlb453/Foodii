@@ -17,17 +17,9 @@ import com.example.foodii.feature.mealdb.data.local.entity.PlannedMealEntity
         MealRoomEntity::class,
         IngredientRoomEntity::class
     ],
-    version = 8, // Incrementado por eliminación de food_categories
+    version = 9, // Subido de 8 a 9 por el nuevo campo categoriesJson en MealRoomEntity
     exportSchema = false
 )
-
-@Database(entities = [
-    PlannedMealEntity::class,
-    MealRoomEntity::class,
-    IngredientRoomEntity::class],
-    version = 7,
-    exportSchema = false)
-
 abstract class FoodiiDatabase : RoomDatabase() {
 
     abstract fun plannedMealDao(): PlannedMealDao

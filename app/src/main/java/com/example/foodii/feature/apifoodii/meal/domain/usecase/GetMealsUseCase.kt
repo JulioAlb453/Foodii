@@ -3,8 +3,9 @@ package com.example.foodii.feature.apifoodii.meal.domain.usecase
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRepository
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-class GetMealsUseCase(
+class GetMealsUseCase @Inject constructor(
     private val mealRepository: MealFoodiiRepository
 ) {
 

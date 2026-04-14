@@ -20,7 +20,7 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
 
     override suspend fun getAllIngredients(userId: String): List<Ingredient> {
         try {
-            val response = api.getAllIngredientsAPI(userId = userId)
+            val response = api.getAllIngredientsAPI()
             if (response.success == true && response.ingredients != null) {
                 Log.d(TAG, "Sincronizando ${response.ingredients.size} ingredientes para userId: $userId")
                 val entities = response.ingredients.map { dto ->

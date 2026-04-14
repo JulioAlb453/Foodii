@@ -6,8 +6,9 @@ import com.example.foodii.feature.apifoodii.meal.domain.repository.MealFoodiiRep
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
+import javax.inject.Inject
 
-class GetMealsByDateRangeUseCase(
+class GetMealsByDateRangeUseCase @Inject constructor(
     private val mealRepository: MealFoodiiRepository
 ) {
     operator fun invoke(

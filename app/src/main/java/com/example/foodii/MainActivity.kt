@@ -1,10 +1,17 @@
 package com.example.foodii
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,13 +35,15 @@ import com.example.foodii.feature.auth.presentation.AuthViewModelFactory
 import com.example.foodii.feature.auth.presentation.LoginScreen
 import com.example.foodii.feature.auth.presentation.RegisterScreen
 import com.example.foodii.feature.food_preferences.presentation.FoodPreferencesScreen
+import com.example.foodii.feature.food_preferences.domain.model.NotificationCategory
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import com.example.foodii.core.service.worker.WidgetUpdateWorker
-import androidx.work.OneTimeWorkRequestBuilder //Ocupado para la presentación en clase
-import androidx.work.WorkManager //Ocupado para la presentación en clase
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -44,12 +53,25 @@ class MainActivity : ComponentActivity() {
 
     lateinit var appContainer: AppContainer
 
+    
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Log.d("MainActivity", "Permiso de notificaciones concedido")
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appContainer = AppContainer(this, authLocalDataSource)
+
+        askNotificationPermission()
+
         WidgetUpdateWorker.schedule(this)
-        val testRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build() //Ocupado para la presentación en clase
-        WorkManager.getInstance(this).enqueue(testRequest)  //Ocupado para la presentación en clase
+        val testRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
+        WorkManager.getInstance(this).enqueue(testRequest)
 
         enableEdgeToEdge()
         setContent {
@@ -59,15 +81,30 @@ class MainActivity : ComponentActivity() {
                 
                 val widgetMealId = remember { intent?.getStringExtra("mealId") }
 
-                val currentUser by appContainer.authRepository.authState.collectAsState(initial = null)
+                val currentUser by appContainer.authRepository.authState.collectAsStateWithLifecycle(
+                    initialValue = null
+                )
+
+                // LOGICA DE SUSCRIPCIÓN AUTOMÁTICA A TÓPICOS
+                LaunchedEffect(currentUser?.notificationCategoryPreferences) {
+                    currentUser?.notificationCategoryPreferences?.let { prefs ->
+                        Log.d("FCM_SYNC", "Sincronizando suscripciones para: ${currentUser?.username}")
+                        // Desuscribir de todo lo posible primero para limpiar (opcional)
+                        // O simplemente suscribir a lo nuevo
+                        prefs.forEach { slug ->
+                            FirebaseMessaging.getInstance().subscribeToTopic(slug)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) Log.d("FCM_SYNC", "Suscrito a tópico: $slug")
+                                }
+                        }
+                    }
+                }
 
                 LaunchedEffect(widgetMealId, currentUser) {
                     if (currentUser != null && !widgetMealId.isNullOrEmpty()) {
-                        navController.navigate("meals_list") {
-                            popUpTo("login") { inclusive = true }
+                        navController.navigate("meal_detail/$widgetMealId") {
+                            popUpTo("meals_list") { inclusive = false }
                         }
-                        navController.navigate("meals_summary")
-                        navController.navigate("meal_detail/$widgetMealId")
                     }
                 }
 
@@ -86,10 +123,8 @@ class MainActivity : ComponentActivity() {
 
                         LaunchedEffect(currentUser) {
                             val user = currentUser
-                            android.util.Log.d("AUTH_DEBUG", "currentUser: $user")
-                            android.util.Log.d("AUTH_DEBUG", "prefs: ${user?.notificationCategoryPreferences}")
                             if (user != null && widgetMealId.isNullOrEmpty()) {
-                                if (user.notificationCategoryPreferences.isNullOrEmpty()) {
+                                if (user.notificationCategoryPreferences == null) {
                                     navController.navigate("food_preferences_screen") {
                                         popUpTo("login") { inclusive = true }
                                     }
@@ -149,7 +184,6 @@ class MainActivity : ComponentActivity() {
                                 userId = user.id,
                                 onViewSummaryClick = { navController.navigate("meals_summary") },
                                 onIngredientsClick = { navController.navigate("ingredients") },
-                                onAddMealClick = { navController.navigate("add_meal") },
                                 onLogoutClick = {
                                     scope.launch {
                                         appContainer.authRepository.logout()
@@ -160,7 +194,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onMealClick = { mealId ->
                                     navController.navigate("meal_detail/$mealId")
-                                }
+                                },
+                                onAddMealClick = { navController.navigate("add_meal") }
                             )
                         }
                     }
@@ -206,7 +241,8 @@ class MainActivity : ComponentActivity() {
                         val user = currentUser
                         if (user != null) {
                             val viewModel: MealFoodiiViewModel = viewModel(
-                                factory = appContainer.mealModule.provideMealViewModelFactory()
+                                factory = appContainer.
+                                mealModule.provideMealViewModelFactory()
                             )
                             MealsSummaryScreen(
                                 viewModel = viewModel,
@@ -221,7 +257,9 @@ class MainActivity : ComponentActivity() {
 
                     composable("ingredients") {
                         val viewModel: IngredientViewModel = viewModel(
-                            factory = appContainer.ingredientModule.provideIngredientViewModelFactory()
+                            factory = appContainer.
+                            ingredientModule.
+                            provideIngredientViewModelFactory()
                         )
                         IngredientsScreen(
                             viewModel = viewModel,
@@ -229,6 +267,16 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
     }

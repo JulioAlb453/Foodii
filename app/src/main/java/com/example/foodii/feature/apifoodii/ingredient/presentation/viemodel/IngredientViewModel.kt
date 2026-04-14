@@ -1,5 +1,6 @@
 package com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodii.feature.apifoodii.ingredient.domain.entity.Ingredient
@@ -24,6 +25,7 @@ class IngredientViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
+    private val TAG = "IngredientViewModel"
     private val _uiState = MutableStateFlow(IngredientFoodiiDetailsUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -51,9 +53,16 @@ class IngredientViewModel @Inject constructor(
     }
 
     fun createIngredient(name: String, caloriesPer100g: Double) {
+        Log.d(TAG, "Llamada a createIngredient con nombre: $name")
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val user = authRepository.getCurrentUser() ?: return@launch
+            val user = authRepository.getCurrentUser()
+            if (user == null) {
+                Log.e(TAG, "Error: Usuario nulo al intentar crear ingrediente")
+                _uiState.update { it.copy(isLoading = false, error = "Sesión expirada") }
+                return@launch
+            }
+            
             val newIngredient = Ingredient(
                 id = UUID.randomUUID().toString(),
                 name = name,
@@ -62,12 +71,15 @@ class IngredientViewModel @Inject constructor(
                 createdAt = java.util.Date()
             )
 
+            Log.d(TAG, "Ejecutando UseCase para ingrediente: ${newIngredient.id}")
             val result = createIngredientUseCase(newIngredient, user.id)
             result.fold(
                 onSuccess = {
+                    Log.d(TAG, "Creación exitosa en ViewModel. Recargando lista...")
                     loadIngredients()
                 },
                 onFailure = { err ->
+                    Log.e(TAG, "Error en la creación: ${err.message}")
                     _uiState.update { it.copy(isLoading = false, error = err.message) }
                 }
             )

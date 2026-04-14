@@ -6,10 +6,12 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -21,13 +23,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.compose.*
 import com.example.foodii.feature.apifoodii.ingredient.presentation.viemodel.IngredientViewModel
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMealTime
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
+import com.example.foodii.feature.food_preferences.domain.model.NotificationCategory
 import java.time.LocalDate
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddMealScreen(
     viewModel: MealFoodiiViewModel,
@@ -39,11 +43,22 @@ fun AddMealScreen(
     var mealName by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf(FoodiiMealTime.LUNCH) }
     var showIngredientDialog by remember { mutableStateOf(false) }
+    var stepInput by remember { mutableStateOf("") }
+    val stepsList = remember { mutableStateListOf<String>() }
     
-    val uiState by viewModel.uiState.collectAsState()
-    val selectedIngredients by viewModel.selectedIngredients.collectAsState()
-    val capturedImageUri by viewModel.capturedImageUri.collectAsState()
-    val ingredientUiState by ingredientViewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val selectedIngredients by viewModel.selectedIngredients.collectAsStateWithLifecycle()
+    val selectedCategories by viewModel.selectedCategories.collectAsStateWithLifecycle()
+    val capturedImageUri by viewModel.capturedImageUri.collectAsStateWithLifecycle()
+    val ingredientUiState by ingredientViewModel.uiState.collectAsStateWithLifecycle()
+
+    // Manejo de errores del ViewModel
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+    }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -65,9 +80,14 @@ fun AddMealScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        ingredientViewModel.loadIngredients()
+    }
+
     LaunchedEffect(uiState.successData) {
         if (uiState.successData != null) {
             Toast.makeText(context, "¡Platillo creado con éxito!", Toast.LENGTH_SHORT).show()
+            viewModel.clearSuccessData() // Limpiar para evitar múltiples Toasts
             onBackPressed()
         }
     }
@@ -92,8 +112,26 @@ fun AddMealScreen(
             if (!uiState.isLoading) {
                 ExtendedFloatingActionButton(
                     onClick = { 
+                        if (mealName.isBlank()) {
+                            Toast.makeText(context, "Ingresa un nombre", Toast.LENGTH_SHORT).show()
+                            return@ExtendedFloatingActionButton
+                        }
+                        if (selectedIngredients.isEmpty()) {
+                            Toast.makeText(context, "Añade al menos un ingrediente", Toast.LENGTH_SHORT).show()
+                            return@ExtendedFloatingActionButton
+                        }
+                        
                         val ingredientsList = selectedIngredients.map { it.first.id to it.second }
-                        viewModel.saveMeal(mealName, LocalDate.now(), selectedTime, ingredientsList, userId, capturedImageUri)
+                        viewModel.saveMeal(
+                            name = mealName,
+                            date = LocalDate.now(),
+                            mealTime = selectedTime,
+                            ingredients = ingredientsList,
+                            steps = stepsList.toList(),
+                            userId = userId, // Verificar que no venga vacío desde MainActivity
+                            imageUri = capturedImageUri,
+                            categories = selectedCategories.toList()
+                        )
                     },
                     containerColor = primaryLight,
                     contentColor = onPrimaryLight,
@@ -104,66 +142,125 @@ fun AddMealScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                OutlinedTextField(
-                    value = mealName,
-                    onValueChange = { mealName = it },
-                    label = { Text("Nombre del platillo") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isLoading
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Momento del día:", style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FoodiiMealTime.entries.forEach { time ->
-                        FilterChip(
-                            selected = selectedTime == time,
-                            onClick = { if (!uiState.isLoading) selectedTime = time },
-                            label = { Text(time.name.lowercase().replaceFirstChar { it.uppercase() }) }
-                        )
-                    }
+                item {
+                    OutlinedTextField(
+                        value = mealName,
+                        onValueChange = { mealName = it },
+                        label = { Text("Nombre del platillo") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !uiState.isLoading
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = { 
-                        val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-                            viewModel.onTakePhoto { uri -> uri?.let { cameraLauncher.launch(it) } }
-                        } else {
-                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                item {
+                    Text("Momento del día:", style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FoodiiMealTime.entries.forEach { time ->
+                            FilterChip(
+                                selected = selectedTime == time,
+                                onClick = { if (!uiState.isLoading) selectedTime = time },
+                                label = { Text(time.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                            )
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (capturedImageUri == null) secondaryLight else primaryLight
-                    ),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Icon(Icons.Default.PhotoCamera, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (capturedImageUri == null) "Añadir foto del platillo" else "¡Foto lista! ✅")
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Ingredientes", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { if (!uiState.isLoading) showIngredientDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Text("Añadir")
                     }
                 }
 
-                LazyColumn(modifier = Modifier.weight(1f)) {
+                item {
+                    Text("Categorías:", style = MaterialTheme.typography.labelLarge)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        NotificationCategory.ALL.forEach { category ->
+                            FilterChip(
+                                selected = selectedCategories.contains(category.slug),
+                                onClick = { if (!uiState.isLoading) viewModel.onCategoryToggled(category.slug) },
+                                label = { Text(category.label) }
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Button(
+                        onClick = { 
+                            val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                            if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                                viewModel.onTakePhoto { uri -> uri?.let { cameraLauncher.launch(it) } }
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !uiState.isLoading,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (capturedImageUri == null) secondaryLight else primaryLight
+                        )
+                    ) {
+                        Icon(Icons.Default.PhotoCamera, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (capturedImageUri == null) "Añadir foto" else "¡Foto lista! ✅")
+                    }
+                }
+
+                item {
+                    HorizontalDivider()
+                    Text("Instrucciones de Preparación", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = stepInput,
+                            onValueChange = { stepInput = it },
+                            label = { Text("Nuevo paso...") },
+                            modifier = Modifier.weight(1f),
+                            enabled = !uiState.isLoading
+                        )
+                        IconButton(onClick = {
+                            if (stepInput.isNotBlank()) {
+                                stepsList.add(stepInput)
+                                stepInput = ""
+                            }
+                        }) {
+                            Icon(Icons.Default.AddCircle, contentDescription = "Añadir", tint = primaryLight)
+                        }
+                    }
+                }
+
+                itemsIndexed(stepsList) { index, step ->
+                    ListItem(
+                        headlineContent = { Text("${index + 1}. $step") },
+                        trailingContent = {
+                            IconButton(onClick = { stepsList.removeAt(index) }) {
+                                Icon(Icons.Default.Delete, tint = errorLight, contentDescription = null)
+                            }
+                        }
+                    )
+                }
+
+                item {
+                    HorizontalDivider()
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Ingredientes Seleccionados", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        TextButton(onClick = { if (!uiState.isLoading) showIngredientDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Text("Añadir")
+                        }
+                    }
+                }
+
+                if (selectedIngredients.isEmpty()) {
+                    item {
+                        Text("No has añadido ingredientes", style = MaterialTheme.typography.bodyMedium, color = outlineLight)
+                    }
+                } else {
                     items(selectedIngredients) { (ingredient, amount) ->
                         ListItem(
                             headlineContent = { Text(ingredient.name) },
@@ -179,6 +276,10 @@ fun AddMealScreen(
                         )
                     }
                 }
+
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
             }
 
             if (uiState.isLoading) {
@@ -192,20 +293,9 @@ fun AddMealScreen(
                     ) {
                         CircularProgressIndicator(color = primaryLight)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Subiendo receta...", fontWeight = FontWeight.Bold)
+                        Text("Guardando receta...", fontWeight = FontWeight.Bold)
                     }
                 }
-            }
-
-            uiState.error?.let { error ->
-                Snackbar(
-                    modifier = Modifier.padding(16.dp).align(Alignment.BottomCenter),
-                    action = {
-                        TextButton(onClick = { viewModel.clearError() }) {
-                            Text("Cerrar", color = MaterialTheme.colorScheme.inversePrimary)
-                        }
-                    }
-                ) { Text(text = error) }
             }
         }
     }
@@ -213,13 +303,13 @@ fun AddMealScreen(
     if (showIngredientDialog) {
         AlertDialog(
             onDismissRequest = { showIngredientDialog = false },
-            title = { Text("Elegir del Catálogo") },
+            title = { Text("Elegir Ingredientes") },
             text = {
                 Box(modifier = Modifier.height(300.dp)) {
                     LazyColumn {
                         items(ingredientUiState.ingredients) { ingredient ->
                             ListItem(
-                                modifier = Modifier.clickable { 
+                                modifier = Modifier.clickable {
                                     viewModel.addIngredientToDraft(ingredient, 100)
                                     showIngredientDialog = false
                                 },

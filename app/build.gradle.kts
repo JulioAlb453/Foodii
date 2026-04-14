@@ -5,11 +5,12 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
 }
 val localPropertiesFile = rootProject.file("local.properties")
 val pexelsKey = if (localPropertiesFile.exists()) {
     localPropertiesFile.readLines()
-        .firstOrNull { it.startsWith("PEXELS_API_KEY=") }
+        .firstOrNull { it.startsWith("") }
         ?.substringAfter("=") ?: ""
 } else ""
 
@@ -34,6 +35,8 @@ android {
         buildConfigField("String", "BASE_URL", "\"https://www.themealdb.com/api/json/v1/1/\"")
         buildConfigField("String", "FOODII_BASE_URL", "\"http://52.206.95.157:3000/\"")
         buildConfigField("String", "PEXELS_API_KEY", "\"$pexelsKey\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"foodii_preset\"")
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"duogqx5e3\"")
     }
 
     buildTypes {
@@ -67,6 +70,7 @@ dependencies {
     // Core & Lifecycle
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     // UI & Compose
@@ -114,6 +118,13 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
 
+    // Cloudinary
+    implementation(libs.cloudinary.android)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging.ktx)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -122,6 +133,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
-
 }

@@ -1,14 +1,18 @@
 package com.example.foodii.feature.auth.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodii.feature.auth.domain.usecase.LoginUseCase
 import com.example.foodii.feature.auth.domain.usecase.LogoutUseCase
 import com.example.foodii.feature.auth.domain.usecase.RegisterUseCase
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 class AuthViewModel(
     private val loginUseCase: LoginUseCase,
@@ -22,7 +26,12 @@ class AuthViewModel(
     fun login(username: String, password: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            val result = loginUseCase(username, password)
+
+            val fcmToken = getFcmToken()
+            Log.d("AuthViewModel", "FCM Token obtenido: $fcmToken")
+
+            val result = loginUseCase(username, password, fcmToken)
+
             _uiState.update { currentState ->
                 result.fold(
                     onSuccess = { user ->
@@ -36,24 +45,35 @@ class AuthViewModel(
         }
     }
 
-    /**
-     * Realiza el registro con preferencias y, si es exitoso, realiza el login automáticamente.
-     */
+    private suspend fun getFcmToken(): String? = suspendCancellableCoroutine { continuation ->
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                continuation.resume(task.result)
+            } else {
+                Log.e("AuthViewModel", "Error al obtener FCM token", task.exception)
+                continuation.resume(null)
+            }
+        }
+    }
+
+    fun register(username: String, password: String) {
+        registerThenLogin(username, password)
+    }
+
     fun registerThenLogin(
-        username: String, 
-        password: String, 
+        username: String,
+        password: String,
         preferences: List<String> = emptyList()
     ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            
-            // 1. Registro enviando las preferencias seleccionadas
+
             val registerResult = registerUseCase(username, password, preferences)
-            
+
             registerResult.fold(
                 onSuccess = {
-                    // 2. Login automático tras registro exitoso para obtener el token
-                    val loginResult = loginUseCase(username, password)
+                    val fcmToken = getFcmToken()
+                    val loginResult = loginUseCase(username, password, fcmToken)
                     _uiState.update { currentState ->
                         loginResult.fold(
                             onSuccess = { user ->

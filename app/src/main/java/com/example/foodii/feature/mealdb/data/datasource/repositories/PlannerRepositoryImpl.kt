@@ -45,4 +45,10 @@ class PlannerRepositoryImpl @Inject constructor(
             plannedMealDao.getPlannedMealsInRange(userId, start, end)
         }
     }
+
+    override suspend fun updatePlannedMealDate(id: Int, newDate: Long, userId: String) {
+        withContext(Dispatchers.IO) {
+            plannedMealDao.updateMealDate(id, newDate, userId)
+        }
+    }
 }

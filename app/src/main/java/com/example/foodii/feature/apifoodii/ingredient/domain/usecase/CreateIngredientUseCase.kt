@@ -8,6 +8,6 @@ class CreateIngredientUseCase @Inject constructor(
     private val ingredientRepository: IngredientRepository
 ) {
     suspend operator fun invoke(ingredient: Ingredient, userId: String): Result<Unit> {
-        return ingredientRepository.updateIngredient(ingredient, userId) 
+        return ingredientRepository.createIngredient(ingredient, userId)
     }
 }
