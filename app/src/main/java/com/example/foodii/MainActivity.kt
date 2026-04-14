@@ -53,6 +53,8 @@ class MainActivity : ComponentActivity() {
 
     lateinit var appContainer: AppContainer
 
+    
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
