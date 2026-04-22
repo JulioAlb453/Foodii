@@ -26,6 +26,7 @@ import com.example.foodii.feature.apifoodii.meal.presentation.screen.AddMealScre
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealDetailScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsListScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsSummaryScreen
+import com.example.foodii.feature.apifoodii.meal.presentation.screen.RandomMealScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
 import com.example.foodii.feature.auth.domain.usecase.LoginUseCase
 import com.example.foodii.feature.auth.domain.usecase.LogoutUseCase
@@ -53,8 +54,6 @@ class MainActivity : ComponentActivity() {
 
     lateinit var appContainer: AppContainer
 
-    
-
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -65,7 +64,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        appContainer = AppContainer(this, authLocalDataSource)
+        appContainer = AppContainer(this)
 
         askNotificationPermission()
 
@@ -75,7 +74,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            FoodiiTheme(dynamicColor = false) {
+            FoodiiTheme(dynamicColor = false, darkTheme = false) {
                 val navController = rememberNavController()
                 val scope = rememberCoroutineScope()
                 
@@ -84,13 +83,10 @@ class MainActivity : ComponentActivity() {
                 val currentUser by appContainer.authRepository.authState.collectAsStateWithLifecycle(
                     initialValue = null
                 )
-
-                // LOGICA DE SUSCRIPCIÓN AUTOMÁTICA A TÓPICOS
                 LaunchedEffect(currentUser?.notificationCategoryPreferences) {
                     currentUser?.notificationCategoryPreferences?.let { prefs ->
                         Log.d("FCM_SYNC", "Sincronizando suscripciones para: ${currentUser?.username}")
-                        // Desuscribir de todo lo posible primero para limpiar (opcional)
-                        // O simplemente suscribir a lo nuevo
+
                         prefs.forEach { slug ->
                             FirebaseMessaging.getInstance().subscribeToTopic(slug)
                                 .addOnCompleteListener { task ->
@@ -184,6 +180,7 @@ class MainActivity : ComponentActivity() {
                                 userId = user.id,
                                 onViewSummaryClick = { navController.navigate("meals_summary") },
                                 onIngredientsClick = { navController.navigate("ingredients") },
+                                onRandomMealClick = { navController.navigate("random_meal") },
                                 onLogoutClick = {
                                     scope.launch {
                                         appContainer.authRepository.logout()
@@ -196,6 +193,20 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("meal_detail/$mealId")
                                 },
                                 onAddMealClick = { navController.navigate("add_meal") }
+                            )
+                        }
+                    }
+
+                    composable("random_meal") {
+                        val user = currentUser
+                        if (user != null) {
+                            val viewModel: MealFoodiiViewModel = viewModel(
+                                factory = appContainer.mealModule.provideMealViewModelFactory()
+                            )
+                            RandomMealScreen(
+                                viewModel = viewModel,
+                                userId = user.id,
+                                onBackPressed = { navController.popBackStack() }
                             )
                         }
                     }

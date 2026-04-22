@@ -11,16 +11,22 @@ import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRa
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.SaveFoodiiMealUseCase
+import com.example.foodii.feature.apifoodii.meal.domain.usecase.DeleteMealUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.PlanMealUseCase
+import com.example.foodii.feature.mealdb.domain.usecase.UpdatePlannedMealDateUseCase
+import com.example.foodii.feature.mealdb.domain.usecase.DeletePlannedMealUseCase
 
 class MealFoodiiViewModelFactory(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
     private val getMealsByDateRangeUseCase: GetMealsByDateRangeUseCase,
     private val getMealsUseCase: GetMealsUseCase,
     private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase,
+    private val deleteMealUseCase: DeleteMealUseCase,
     private val planMealUseCase: PlanMealUseCase,
     private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
+    private val updatePlannedMealDateUseCase: UpdatePlannedMealDateUseCase,
+    private val deletePlannedMealUseCase: DeletePlannedMealUseCase,
     private val ingredientRepository: IngredientRepository,
     private val context: Context,
     private val shakeDetector: ShakeDetector,
@@ -36,8 +42,11 @@ class MealFoodiiViewModelFactory(
                 getMealsByDateRangeUseCase = getMealsByDateRangeUseCase,
                 getMealsUseCase = getMealsUseCase,
                 getFoodiiMealByIdUseCase = getFoodiiMealByIdUseCase,
+                deleteMealUseCase = deleteMealUseCase,
                 planMealUseCase = planMealUseCase,
                 getPlannedMealsUseCase = getPlannedMealsUseCase,
+                updatePlannedMealDateUseCase = updatePlannedMealDateUseCase,
+                deletePlannedMealUseCase = deletePlannedMealUseCase,
                 ingredientRepository = ingredientRepository,
                 context = context,
                 shakeDetector = shakeDetector,

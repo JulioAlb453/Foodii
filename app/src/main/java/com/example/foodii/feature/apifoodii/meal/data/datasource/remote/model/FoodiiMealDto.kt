@@ -5,11 +5,13 @@ import com.google.gson.annotations.SerializedName
 data class FoodiiMealResponse(
     @SerializedName("success") val success: Boolean?,
     @SerializedName("data") val meals: List<FoodiiMealDto>?,
+    @SerializedName("message") val message: String? = null
 )
 
 data class SingleMealResponse(
     @SerializedName("success") val success: Boolean?,
     @SerializedName("data") val meal: FoodiiMealDto?,
+    @SerializedName("message") val message: String? = null
 )
 
 data class MealStepDto(

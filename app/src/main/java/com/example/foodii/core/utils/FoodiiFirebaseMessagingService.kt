@@ -86,8 +86,6 @@ class FoodiiFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // CORRECCIÓN: Usar el hash del mealId como ID de notificación.
-        // Si el mealId es el mismo, la notificación se sobrescribe en lugar de duplicarse.
         val notificationId = mealId?.hashCode() ?: System.currentTimeMillis().toInt()
         
         Log.d(TAG, "Mostrando notificación para mealId: $mealId con ID: $notificationId")

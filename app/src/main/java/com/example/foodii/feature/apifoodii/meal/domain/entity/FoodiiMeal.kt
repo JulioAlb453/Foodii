@@ -17,7 +17,8 @@ data class FoodiiMeal(
     val steps: List<FoodiiMealStep> = emptyList(),
     val image: String? = null,
     val ingredients: List<FoodiiMealIngredient> = emptyList(),
-    val categories: List<String> = emptyList(), // Añadido campo categorías
+    val categories: List<String> = emptyList(),
+    val plannedId: Int? = null
 ) {
     fun stepsPlainText(): String {
         if (steps.isEmpty()) return ""

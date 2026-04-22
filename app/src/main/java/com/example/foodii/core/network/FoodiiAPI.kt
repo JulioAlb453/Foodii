@@ -4,12 +4,15 @@ import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.mo
 import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.model.IngredientResponse
 import com.example.foodii.feature.apifoodii.ingredient.data.datasource.remote.model.SingleIngredientResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.CreateMealRequestDto
+import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.DeleteMealRequestDto
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.FoodiiMealResponse
 import com.example.foodii.feature.apifoodii.meal.data.datasource.remote.model.SingleMealResponse
 import com.example.foodii.feature.auth.data.datasource.remote.model.AuthResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 import retrofit2.http.PATCH
 import retrofit2.http.PUT
@@ -39,6 +42,14 @@ interface FoodiiAPI {
         @Body body: CreateMealRequestDto,
     ): SingleMealResponse
 
+
+    @HTTP(method = "DELETE", path = "api/meals/{id}", hasBody = true)
+    suspend fun deleteMealAPI(
+        @Header("Authorization") token: String,
+        @Path("id") id: String,
+        @Body body: DeleteMealRequestDto
+    ): SingleMealResponse
+
     @GET("api/ingredients")
     suspend fun getAllIngredientsAPI(): IngredientResponse
 
@@ -55,6 +66,7 @@ interface FoodiiAPI {
 
     @DELETE("api/ingredients/{id}")
     suspend fun deleteIngredientAPI(
+        @Header("Authorization") token: String,
         @Path("id") id: String,
     ): SingleIngredientResponse
 

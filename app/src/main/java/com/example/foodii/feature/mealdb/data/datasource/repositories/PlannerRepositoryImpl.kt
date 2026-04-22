@@ -51,4 +51,13 @@ class PlannerRepositoryImpl @Inject constructor(
             plannedMealDao.updateMealDate(id, newDate, userId)
         }
     }
+
+    override suspend fun deletePlannedMeal(id: Int, userId: String) {
+        withContext(Dispatchers.IO) {
+            val meal = plannedMealDao.getPlannedMealById(id, userId)
+            if (meal != null) {
+                plannedMealDao.deleteMeal(meal)
+            }
+        }
+    }
 }

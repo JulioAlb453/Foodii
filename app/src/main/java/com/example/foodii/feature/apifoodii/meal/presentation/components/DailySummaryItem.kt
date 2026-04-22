@@ -7,9 +7,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.compose.onSurfaceLight
-import com.example.compose.primaryLight
 import com.example.foodii.feature.apifoodii.meal.domain.entity.DailySummary
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.ui.theme.TypographyFoodii
@@ -17,7 +14,9 @@ import com.example.ui.theme.TypographyFoodii
 @Composable
 fun DailySummaryItem(
     summary: DailySummary,
-    onMealClick: (FoodiiMeal) -> Unit = {}
+    onMealClick: (FoodiiMeal) -> Unit = {},
+    onRescheduleClick: (FoodiiMeal) -> Unit = {},
+    onDeleteClick: (FoodiiMeal) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -35,23 +34,28 @@ fun DailySummaryItem(
                 text = summary.date,
                 style = TypographyFoodii.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
-                color = onSurfaceLight
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Text(
                 text = "Total: ${summary.totalCalories} kcal",
                 style = TypographyFoodii.labelMedium,
-                color = primaryLight,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(bottom = 8.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+        )
 
         summary.meals.forEach { meal ->
             MealItemCard(
                 meal = meal,
-                onClick = { onMealClick(meal) }
+                onClick = { onMealClick(meal) },
+                onRescheduleClick = { onRescheduleClick(meal) },
+                onDeleteClick = { onDeleteClick(meal) }
             )
         }
     }

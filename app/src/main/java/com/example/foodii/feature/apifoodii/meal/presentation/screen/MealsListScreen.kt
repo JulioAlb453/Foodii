@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Restaurant
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.compose.FoodiiTheme
+import com.example.compose.backgroundDark
 import com.example.compose.backgroundLight
 import com.example.compose.onPrimaryDark
 import com.example.compose.onPrimaryLight
@@ -43,6 +45,7 @@ fun MealsListScreen(
     userId: String,
     onViewSummaryClick: () -> Unit,
     onIngredientsClick: () -> Unit,
+    onRandomMealClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onMealClick: (String) -> Unit,
     onAddMealClick: () -> Unit
@@ -56,7 +59,7 @@ fun MealsListScreen(
         }
     }
 
-    FoodiiTheme( dynamicColor = false) {
+    FoodiiTheme( dynamicColor = false, darkTheme = false) {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val meals by viewModel.allMeals.collectAsStateWithLifecycle()
 
@@ -117,12 +120,25 @@ fun MealsListScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { viewModel.sendTestNotification(userId) },
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
+                    FloatingActionButton(
+                        onClick = onRandomMealClick,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Icon(Icons.Default.Casino, contentDescription = "Sugerencia aleatoria")
+                    }
+
+                    FloatingActionButton(
+                        onClick = { viewModel.sendTestNotification(userId) },
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    ) {
+                        Icon(Icons.Default.NotificationsActive, contentDescription = "Probar Notificación")
+                    }
                 }
             }
         ) { padding ->

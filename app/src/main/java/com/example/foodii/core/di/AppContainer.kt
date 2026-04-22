@@ -34,13 +34,16 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class AppContainer(context: Context, val authLocalDataSource: AuthLocalDataSource) {
-
+class AppContainer(private val context: Context) {
 
     private val loggingInterceptor = HttpLoggingInterceptor { message ->
         Log.d("API_TRAFFIC", message)
     }.apply {
         level = HttpLoggingInterceptor.Level.BODY
+    }
+
+    val authLocalDataSource: AuthLocalDataSource by lazy {
+        AuthLocalDataSourceImpl(context)
     }
 
     private val okHttpClient = OkHttpClient.Builder()
@@ -76,11 +79,11 @@ class AppContainer(context: Context, val authLocalDataSource: AuthLocalDataSourc
     }
 
     val foodiiRepository: MealFoodiiRepository by lazy {
-        MealFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.mealDao())
+        MealFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.mealDao(), authLocalDataSource)
     }
 
     val ingredientRepository: IngredientRepository by lazy {
-        IngredientFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.ingredientDao())
+        IngredientFoodiiRepositoryImpl(foodiiApi, foodiiDatabase.ingredientDao(), authLocalDataSource)
     }
 
     val authRepository: AuthRepository by lazy {
