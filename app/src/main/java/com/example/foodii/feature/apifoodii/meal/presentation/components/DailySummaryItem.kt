@@ -15,7 +15,8 @@ import com.example.ui.theme.TypographyFoodii
 fun DailySummaryItem(
     summary: DailySummary,
     onMealClick: (FoodiiMeal) -> Unit = {},
-    onRescheduleClick: (FoodiiMeal) -> Unit = {}
+    onRescheduleClick: (FoodiiMeal) -> Unit = {},
+    onDeleteClick: (FoodiiMeal) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -39,21 +40,22 @@ fun DailySummaryItem(
             Text(
                 text = "Total: ${summary.totalCalories} kcal",
                 style = TypographyFoodii.labelMedium,
-                color = MaterialTheme.colorScheme.primary, // Cambiado a color primario del tema para mejor visibilidad
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
             )
         }
 
         HorizontalDivider(
             modifier = Modifier.padding(bottom = 8.dp),
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) // Cambiado para que sea más visible
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
         )
 
         summary.meals.forEach { meal ->
             MealItemCard(
                 meal = meal,
                 onClick = { onMealClick(meal) },
-                onRescheduleClick = { onRescheduleClick(meal) }
+                onRescheduleClick = { onRescheduleClick(meal) },
+                onDeleteClick = { onDeleteClick(meal) }
             )
         }
     }

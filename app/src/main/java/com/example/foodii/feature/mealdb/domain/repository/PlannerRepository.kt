@@ -14,4 +14,6 @@ interface PlannerRepository {
     suspend fun getPlannedMealsForDateRange(userId: String, start: Long, end: Long): List<PlannedMealEntity>
 
     suspend fun updatePlannedMealDate(id: Int, newDate: Long, userId: String)
+
+    suspend fun deletePlannedMeal(id: Int, userId: String)
 }

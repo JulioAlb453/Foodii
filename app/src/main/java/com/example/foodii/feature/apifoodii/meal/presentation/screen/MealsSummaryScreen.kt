@@ -28,11 +28,11 @@ fun MealsSummaryScreen(
     onNavigateToDetail: (String) -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
-    var mealToReschedule by remember { mutableStateOf<FoodiiMeal?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var mealToProcess by remember { mutableStateOf<FoodiiMeal?>(null) }
     val datePickerState = rememberDatePickerState()
 
-    // RESTAURADO A MODO OSCURO (darkTheme = true)
-    FoodiiTheme(darkTheme = true, dynamicColor = false) {
+    FoodiiTheme(darkTheme = false, dynamicColor = false) {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val summaries by viewModel.summaries.collectAsStateWithLifecycle()
 
@@ -44,16 +44,19 @@ fun MealsSummaryScreen(
 
         if (showDatePicker) {
             DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
+                onDismissRequest = { 
+                    showDatePicker = false
+                    mealToProcess = null
+                },
                 confirmButton = {
                     TextButton(onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            mealToReschedule?.let { meal ->
+                            mealToProcess?.let { meal ->
                                 viewModel.scheduleMealReminder(meal, millis)
                             }
                         }
                         showDatePicker = false
-                        mealToReschedule = null
+                        mealToProcess = null
                     }) {
                         Text("Confirmar")
                     }
@@ -61,7 +64,7 @@ fun MealsSummaryScreen(
                 dismissButton = {
                     TextButton(onClick = { 
                         showDatePicker = false
-                        mealToReschedule = null
+                        mealToProcess = null
                     }) {
                         Text("Cancelar")
                     }
@@ -69,6 +72,37 @@ fun MealsSummaryScreen(
             ) {
                 DatePicker(state = datePickerState)
             }
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { 
+                    showDeleteDialog = false
+                    mealToProcess = null
+                },
+                title = { Text("Eliminar agendación") },
+                text = { Text("¿Estás seguro de que deseas eliminar esta comida de tu agenda? Esta acción no eliminará el platillo de tu lista de creados.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            mealToProcess?.let { viewModel.deletePlannedMeal(it) }
+                            showDeleteDialog = false
+                            mealToProcess = null
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Eliminar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { 
+                        showDeleteDialog = false
+                        mealToProcess = null
+                    }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
 
         Scaffold(
@@ -130,12 +164,23 @@ fun MealsSummaryScreen(
                                     onNavigateToDetail(meal.id)
                                 },
                                 onRescheduleClick = { meal ->
-                                    mealToReschedule = meal
+                                    mealToProcess = meal
                                     showDatePicker = true
+                                },
+                                onDeleteClick = { meal ->
+                                    mealToProcess = meal
+                                    showDeleteDialog = true
                                 }
                             )
                         }
                     }
+                }
+
+                if (uiState.isLoading && summaries.isNotEmpty()) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
 
                 uiState.error?.let { error ->

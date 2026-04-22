@@ -53,8 +53,6 @@ class MainActivity : ComponentActivity() {
 
     lateinit var appContainer: AppContainer
 
-    
-
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -65,7 +63,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        appContainer = AppContainer(this, authLocalDataSource)
+        appContainer = AppContainer(this)
 
         askNotificationPermission()
 

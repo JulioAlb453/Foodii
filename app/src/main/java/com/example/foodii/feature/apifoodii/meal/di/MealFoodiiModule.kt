@@ -10,11 +10,13 @@ import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetFoodiiMealByI
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsByDateRangeUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.GetMealsUseCase
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.SaveFoodiiMealUseCase
+import com.example.foodii.feature.apifoodii.meal.domain.usecase.DeleteMealUseCase
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModelFactory
 import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
 import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.PlanMealUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.UpdatePlannedMealDateUseCase
+import com.example.foodii.feature.mealdb.domain.usecase.DeletePlannedMealUseCase
 
 class MealFoodiiModule(
     private val mealRepository: MealFoodiiRepository,
@@ -26,39 +28,16 @@ class MealFoodiiModule(
     private val imageRepository: ImageRepository
 ) {
 
-    private fun provideGetMealsUseCase(): GetMealsUseCase {
-        return GetMealsUseCase(mealRepository)
-    }
-
-    private fun provideSaveFoodiiMealUseCase(): SaveFoodiiMealUseCase {
-        return SaveFoodiiMealUseCase(
-            mealRepository = mealRepository,
-            ingredientRepository = ingredientRepository
-        )
-    }
-
-    private fun provideGetMealsByDateRangeUseCase(): GetMealsByDateRangeUseCase {
-        return GetMealsByDateRangeUseCase(mealRepository)
-    }
-
-    private fun provideGetFoodiiMealByIdUseCase(): GetFoodiiMealByIdUseCase {
-        return GetFoodiiMealByIdUseCase(
-            mealRepository = mealRepository,
-            ingredientRepository = ingredientRepository
-        )
-    }
-
-    private fun providePlanMealUseCase(): PlanMealUseCase {
-        return PlanMealUseCase(plannerRepository)
-    }
-
-    private fun provideGetPlannedMealsUseCase(): GetPlannedMealsUseCase {
-        return GetPlannedMealsUseCase(plannerRepository)
-    }
-
-    private fun provideUpdatePlannedMealDateUseCase(): UpdatePlannedMealDateUseCase {
-        return UpdatePlannedMealDateUseCase(plannerRepository)
-    }
+    private fun provideGetMealsUseCase() = GetMealsUseCase(mealRepository)
+    private fun provideSaveFoodiiMealUseCase() = SaveFoodiiMealUseCase(mealRepository, ingredientRepository)
+    private fun provideGetMealsByDateRangeUseCase() = GetMealsByDateRangeUseCase(mealRepository)
+    private fun provideGetFoodiiMealByIdUseCase() = GetFoodiiMealByIdUseCase(mealRepository, ingredientRepository)
+    private fun provideDeleteMealUseCase() = DeleteMealUseCase(mealRepository)
+    
+    private fun providePlanMealUseCase() = PlanMealUseCase(plannerRepository)
+    private fun provideGetPlannedMealsUseCase() = GetPlannedMealsUseCase(plannerRepository)
+    private fun provideUpdatePlannedMealDateUseCase() = UpdatePlannedMealDateUseCase(plannerRepository)
+    private fun provideDeletePlannedMealUseCase() = DeletePlannedMealUseCase(plannerRepository)
 
     fun provideMealViewModelFactory(): MealFoodiiViewModelFactory {
         return MealFoodiiViewModelFactory(
@@ -66,9 +45,11 @@ class MealFoodiiModule(
             getMealsByDateRangeUseCase = provideGetMealsByDateRangeUseCase(),
             getMealsUseCase = provideGetMealsUseCase(),
             getFoodiiMealByIdUseCase = provideGetFoodiiMealByIdUseCase(),
+            deleteMealUseCase = provideDeleteMealUseCase(),
             planMealUseCase = providePlanMealUseCase(),
             getPlannedMealsUseCase = provideGetPlannedMealsUseCase(),
             updatePlannedMealDateUseCase = provideUpdatePlannedMealDateUseCase(),
+            deletePlannedMealUseCase = provideDeletePlannedMealUseCase(),
             ingredientRepository = ingredientRepository,
             context = context,
             shakeDetector = shakeDetector,

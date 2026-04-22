@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -30,7 +31,8 @@ fun MealItemCard(
     meal: FoodiiMeal,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
-    onRescheduleClick: (() -> Unit)? = null
+    onRescheduleClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val imageUrl = meal.image.toFullImageUrl()
     val context = LocalContext.current
@@ -42,7 +44,6 @@ fun MealItemCard(
             .padding(vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            // FONDO OSCURO PARA EL TEMA NEGRO
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
@@ -115,10 +116,20 @@ fun MealItemCard(
                             )
                         }
                     }
+
+                    if (onDeleteClick != null) {
+                        IconButton(onClick = onDeleteClick) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar agendación",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             }
 
-            // Visualización de categorías
             if (meal.categories.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 FlowRow(

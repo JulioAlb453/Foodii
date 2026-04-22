@@ -8,12 +8,15 @@ import com.example.foodii.feature.apifoodii.ingredient.data.local.dao.Ingredient
 import com.example.foodii.feature.apifoodii.ingredient.data.local.entity.IngredientRoomEntity
 import com.example.foodii.feature.apifoodii.ingredient.domain.entity.Ingredient
 import com.example.foodii.feature.apifoodii.ingredient.domain.repository.IngredientRepository
+import com.example.foodii.feature.auth.data.datasource.local.AuthLocalDataSource
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 class IngredientFoodiiRepositoryImpl @Inject constructor(
     private val api: FoodiiAPI,
-    private val ingredientDao: IngredientRoomDao
+    private val ingredientDao: IngredientRoomDao,
+    private val authLocalDataSource: AuthLocalDataSource
 ) : IngredientRepository {
 
     private val TAG = "IngredientRepository"
@@ -141,12 +144,19 @@ class IngredientFoodiiRepositoryImpl @Inject constructor(
 
     override suspend fun deleteIngredient(id: String, userId: String): Result<Unit> {
         return try {
-            val response = api.deleteIngredientAPI(id = id)
-            if (response.success == true) {
-                ingredientDao.deleteIngredientById(id, userId)
-                Result.success(Unit)
+            val user = authLocalDataSource.getUser().firstOrNull()
+            val token = user?.token?.let { if (it.startsWith("Bearer ")) it else "Bearer $it" }
+
+            if (token != null) {
+                val response = api.deleteIngredientAPI(token = token, id = id)
+                if (response.success == true) {
+                    ingredientDao.deleteIngredientById(id, userId)
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Error al eliminar ingrediente"))
+                }
             } else {
-                Result.failure(Exception("Error al eliminar ingrediente"))
+                Result.failure(Exception("Sesión no válida"))
             }
         } catch (e: Exception) {
             Result.failure(e)
