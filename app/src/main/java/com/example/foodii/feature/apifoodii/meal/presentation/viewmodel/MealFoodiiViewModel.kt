@@ -29,14 +29,17 @@ import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.PlanMealUseCase
 import com.example.foodii.feature.mealdb.presentation.widget.MealReminderWidget
 import com.example.foodii.feature.mealdb.data.worker.SingleMealNotificationWorker
+import com.example.foodii.feature.mealdb.domain.usecase.UpdatePlannedMealDateUseCase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.CancellationException
 
 class MealFoodiiViewModel(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
@@ -45,6 +48,7 @@ class MealFoodiiViewModel(
     private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase,
     private val planMealUseCase: PlanMealUseCase,
     private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
+    private val updatePlannedMealDateUseCase: UpdatePlannedMealDateUseCase,
     private val ingredientRepository: IngredientRepository,
     private val context: Context,
     val shakeDetector: ShakeDetector,
@@ -82,14 +86,14 @@ class MealFoodiiViewModel(
     private val _capturedImageUri = MutableStateFlow<Uri?>(null)
     val capturedImageUri = _capturedImageUri.asStateFlow()
 
+    private var rangeLoadJob: Job? = null
+
     fun startShakeDetection() {
         shakeDetector.startListening {
             if (_currentStep.value < 3) {
                 _currentStep.value += 1
-                Log.d("Shake", "Cambiando al paso ${_currentStep.value}")
             } else {
                 _currentStep.value = 1
-                Log.d("Shake", "Reiniciando pasos")
             }
         }
     }
@@ -108,7 +112,6 @@ class MealFoodiiViewModel(
             _ingredientsForMealForm.value = try {
                 ingredientRepository.getAllIngredients(userId)
             } catch (e: Exception) {
-                Log.e("MealFoodiiViewModel", "Ingredientes para formulario", e)
                 emptyList()
             }
         }
@@ -127,7 +130,9 @@ class MealFoodiiViewModel(
                     _uiState.update { it.copy(isLoading = false) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+                if (e !is CancellationException) {
+                    _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+                }
             }
         }
     }
@@ -151,8 +156,10 @@ class MealFoodiiViewModel(
     }
 
     fun loadMealsRange(userId: String, startDate: String, endDate: String) {
+        rangeLoadJob?.cancel()
+        
         _uiState.update { it.copy(isLoading = true, error = null) }
-        viewModelScope.launch {
+        rangeLoadJob = viewModelScope.launch {
             try {
                 launch {
                     getMealsUseCase(userId).collect { meals ->
@@ -173,7 +180,9 @@ class MealFoodiiViewModel(
                     updateCombinedSummaries(userId, startDate, endDate)
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+                if (e !is CancellationException) {
+                    _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+                }
             }
         }
     }
@@ -184,30 +193,39 @@ class MealFoodiiViewModel(
         val allCreatedMeals = _allMeals.value
 
         val localGrouped = localPlanned.groupBy { 
-            val date = Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
+            val date = Instant.ofEpochMilli(it.date).atZone(ZoneOffset.UTC).toLocalDate()
             date.toString()
         }
 
         val combined = apiSummaries.map { summary ->
             val summaryDate = summary.date.substringBefore("T")
-            val existingMealIds = summary.meals.map { it.id }.toSet()
+            val localMealsMap = localGrouped[summaryDate]?.associateBy { it.mealId } ?: emptyMap()
             
-            val extraMeals = localGrouped[summaryDate]?.filter { it.mealId !in existingMealIds }?.map { planned ->
-                val matchingMeal = allCreatedMeals.find { it.id == planned.mealId }
-                FoodiiMeal(
-                    id = planned.mealId,
-                    name = planned.name,
-                    date = Instant.ofEpochMilli(planned.date).atZone(ZoneId.systemDefault()).toLocalDate(),
-                    mealTime = FoodiiMealTime.SNACK,
-                    totalCalories = matchingMeal?.totalCalories ?: 0.0,
-                    createdBy = userId,
-                    steps = emptyList(),
-                    image = null,
-                    ingredients = emptyList(),
-                )
-            } ?: emptyList()
+            val updatedApiMeals = summary.meals.map { apiMeal ->
+                apiMeal.copy(plannedId = localMealsMap[apiMeal.id]?.id)
+            }
             
-            val allDayMeals = (summary.meals + extraMeals).distinctBy { it.id }
+            val apiMealIds = updatedApiMeals.map { it.id }.toSet()
+            
+            val extraMeals = (localGrouped[summaryDate] ?: emptyList())
+                .filter { it.mealId !in apiMealIds }
+                .map { planned ->
+                    val matchingMeal = allCreatedMeals.find { it.id == planned.mealId }
+                    FoodiiMeal(
+                        id = planned.mealId,
+                        name = planned.name,
+                        date = Instant.ofEpochMilli(planned.date).atZone(ZoneOffset.UTC).toLocalDate(),
+                        mealTime = FoodiiMealTime.SNACK,
+                        totalCalories = matchingMeal?.totalCalories ?: 0.0,
+                        createdBy = userId,
+                        steps = emptyList(),
+                        image = matchingMeal?.image,
+                        ingredients = emptyList(),
+                        plannedId = planned.id
+                    )
+                }
+            
+            val allDayMeals = (updatedApiMeals + extraMeals).distinctBy { it.id }
             summary.copy(
                 date = summaryDate, 
                 meals = allDayMeals,
@@ -222,13 +240,14 @@ class MealFoodiiViewModel(
                 FoodiiMeal(
                     id = planned.mealId,
                     name = planned.name,
-                    date = Instant.ofEpochMilli(planned.date).atZone(ZoneId.systemDefault()).toLocalDate(),
+                    date = Instant.ofEpochMilli(planned.date).atZone(ZoneOffset.UTC).toLocalDate(),
                     mealTime = FoodiiMealTime.SNACK,
                     totalCalories = matchingMeal?.totalCalories ?: 0.0,
                     createdBy = userId,
                     steps = emptyList(),
-                    image = null,
+                    image = matchingMeal?.image,
                     ingredients = emptyList(),
+                    plannedId = planned.id
                 )
             }
             DailySummary(
@@ -238,7 +257,8 @@ class MealFoodiiViewModel(
             )
         }
 
-        _summaries.value = (combined + extraSummaries).sortedBy { it.date }
+        val finalResult = (combined + extraSummaries).sortedBy { it.date }
+        _summaries.value = finalResult
         _uiState.update { it.copy(isLoading = false) }
     }
 
@@ -276,9 +296,8 @@ class MealFoodiiViewModel(
         imageUri: Uri? = null,
         categories: List<String> = emptyList()
     ) {
-        // VALIDACIÓN PREVIA: Si el userId está vacío, ni siquiera empezamos el proceso
         if (userId.isBlank()) {
-            _uiState.update { it.copy(error = "No se pudo identificar al usuario. Inicia sesión de nuevo.") }
+            _uiState.update { it.copy(error = "No se pudo identificar al usuario.") }
             return
         }
 
@@ -286,7 +305,6 @@ class MealFoodiiViewModel(
         
         viewModelScope.launch {
             try {
-                // Solo subimos la imagen si el userId es válido
                 var imageUrl: String? = null
                 if (imageUri != null) {
                     val uploadResult = imageRepository.uploadImage(imageUri)
@@ -315,28 +333,35 @@ class MealFoodiiViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+                if (e !is CancellationException) {
+                    _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+                }
             }
         }
     }
 
     fun scheduleMealReminder(meal: FoodiiMeal, dateMillis: Long) {
+        _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
-                // 1. Guardar en la base de datos agendada
-                val mealDetail = MealDetail(
-                    id = meal.id,
-                    name = meal.name,
-                    instructions = meal.stepsPlainText().ifEmpty { "Toca para ver la receta" },
-                    imageUrl = meal.image ?: "",
-                )
-                planMealUseCase(mealDetail, dateMillis, meal.createdBy)
+                if (meal.plannedId != null) {
+                    updatePlannedMealDateUseCase(meal.plannedId, dateMillis, meal.createdBy)
+                } else {
+                    val mealDetail = MealDetail(
+                        id = meal.id,
+                        name = meal.name,
+                        instructions = meal.stepsPlainText().ifEmpty { "Toca para ver la receta" },
+                        imageUrl = meal.image ?: "",
+                    )
+                    planMealUseCase(mealDetail, dateMillis, meal.createdBy)
+                }
                 
-                // 2. Programar la Alerta local (Notificación)
                 val currentTime = System.currentTimeMillis()
                 val delay = dateMillis - currentTime
                 
                 if (delay > 0) {
+                    WorkManager.getInstance(context).cancelAllWorkByTag("alert_${meal.id}")
+
                     val workRequest = OneTimeWorkRequestBuilder<SingleMealNotificationWorker>()
                         .setInitialDelay(delay, TimeUnit.MILLISECONDS)
                         .setInputData(workDataOf(
@@ -347,12 +372,19 @@ class MealFoodiiViewModel(
                         .build()
 
                     WorkManager.getInstance(context).enqueue(workRequest)
-                    Log.d("MealFoodiiViewModel", "Alerta programada para ${meal.name} en $delay ms")
                 }
 
                 MealReminderWidget().updateAll(context)
+                
+                // Forzar recarga inmediata local
+                val start = LocalDate.now().minusMonths(1).toString()
+                val end = LocalDate.now().plusYears(1).toString()
+                loadMealsRange(meal.createdBy, start, end)
+                
             } catch (e: Exception) {
-                Log.e("MealFoodiiViewModel", "Error al agendar recordatorio", e)
+                if (e !is CancellationException) {
+                    _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+                }
             }
         }
     }
@@ -373,12 +405,14 @@ class MealFoodiiViewModel(
                     NotificationHelper.showMealAlert(
                         context = context,
                         title = "Sin agenda próxima",
-                        message = "No tienes comidas programadas para los próximos días.",
+                        message = "No tienes comidas programadas.",
                         mealId = "no_meals"
                     )
                 }
             } catch (e: Exception) {
-                Log.e("MealFoodiiViewModel", "Error al enviar notificación de prueba", e)
+                if (e !is CancellationException) {
+                    Log.e("MealFoodiiViewModel", "Error al enviar notificación de prueba", e)
+                }
             }
         }
     }
@@ -388,6 +422,5 @@ class MealFoodiiViewModel(
     }
 
     fun loadRandomMeal(userId: String) {
-        // Implementación pendiente si es necesaria
     }
 }

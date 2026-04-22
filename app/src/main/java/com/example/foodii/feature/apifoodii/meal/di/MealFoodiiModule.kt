@@ -14,6 +14,7 @@ import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFood
 import com.example.foodii.feature.mealdb.domain.repository.PlannerRepository
 import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.PlanMealUseCase
+import com.example.foodii.feature.mealdb.domain.usecase.UpdatePlannedMealDateUseCase
 
 class MealFoodiiModule(
     private val mealRepository: MealFoodiiRepository,
@@ -55,6 +56,10 @@ class MealFoodiiModule(
         return GetPlannedMealsUseCase(plannerRepository)
     }
 
+    private fun provideUpdatePlannedMealDateUseCase(): UpdatePlannedMealDateUseCase {
+        return UpdatePlannedMealDateUseCase(plannerRepository)
+    }
+
     fun provideMealViewModelFactory(): MealFoodiiViewModelFactory {
         return MealFoodiiViewModelFactory(
             saveFoodiiMealUseCase = provideSaveFoodiiMealUseCase(),
@@ -63,6 +68,7 @@ class MealFoodiiModule(
             getFoodiiMealByIdUseCase = provideGetFoodiiMealByIdUseCase(),
             planMealUseCase = providePlanMealUseCase(),
             getPlannedMealsUseCase = provideGetPlannedMealsUseCase(),
+            updatePlannedMealDateUseCase = provideUpdatePlannedMealDateUseCase(),
             ingredientRepository = ingredientRepository,
             context = context,
             shakeDetector = shakeDetector,

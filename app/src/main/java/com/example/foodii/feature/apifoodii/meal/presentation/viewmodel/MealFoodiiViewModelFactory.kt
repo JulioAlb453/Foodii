@@ -13,6 +13,7 @@ import com.example.foodii.feature.apifoodii.ingredient.domain.repository.Ingredi
 import com.example.foodii.feature.apifoodii.meal.domain.usecase.SaveFoodiiMealUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.GetPlannedMealsUseCase
 import com.example.foodii.feature.mealdb.domain.usecase.PlanMealUseCase
+import com.example.foodii.feature.mealdb.domain.usecase.UpdatePlannedMealDateUseCase
 
 class MealFoodiiViewModelFactory(
     private val saveFoodiiMealUseCase: SaveFoodiiMealUseCase,
@@ -21,6 +22,7 @@ class MealFoodiiViewModelFactory(
     private val getFoodiiMealByIdUseCase: GetFoodiiMealByIdUseCase,
     private val planMealUseCase: PlanMealUseCase,
     private val getPlannedMealsUseCase: GetPlannedMealsUseCase,
+    private val updatePlannedMealDateUseCase: UpdatePlannedMealDateUseCase,
     private val ingredientRepository: IngredientRepository,
     private val context: Context,
     private val shakeDetector: ShakeDetector,
@@ -38,6 +40,7 @@ class MealFoodiiViewModelFactory(
                 getFoodiiMealByIdUseCase = getFoodiiMealByIdUseCase,
                 planMealUseCase = planMealUseCase,
                 getPlannedMealsUseCase = getPlannedMealsUseCase,
+                updatePlannedMealDateUseCase = updatePlannedMealDateUseCase,
                 ingredientRepository = ingredientRepository,
                 context = context,
                 shakeDetector = shakeDetector,

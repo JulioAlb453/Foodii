@@ -84,13 +84,10 @@ class MainActivity : ComponentActivity() {
                 val currentUser by appContainer.authRepository.authState.collectAsStateWithLifecycle(
                     initialValue = null
                 )
-
-                // LOGICA DE SUSCRIPCIÓN AUTOMÁTICA A TÓPICOS
                 LaunchedEffect(currentUser?.notificationCategoryPreferences) {
                     currentUser?.notificationCategoryPreferences?.let { prefs ->
                         Log.d("FCM_SYNC", "Sincronizando suscripciones para: ${currentUser?.username}")
-                        // Desuscribir de todo lo posible primero para limpiar (opcional)
-                        // O simplemente suscribir a lo nuevo
+
                         prefs.forEach { slug ->
                             FirebaseMessaging.getInstance().subscribeToTopic(slug)
                                 .addOnCompleteListener { task ->

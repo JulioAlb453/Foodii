@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -16,10 +17,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
-import com.example.compose.outlineDark
 import com.example.compose.primaryDark
 import com.example.compose.primaryLight
-import com.example.compose.surfaceVariantLight
 import com.example.foodii.core.utils.toFullImageUrl
 import com.example.foodii.feature.apifoodii.meal.domain.entity.FoodiiMeal
 import com.example.foodii.feature.food_preferences.domain.model.NotificationCategory
@@ -30,7 +29,8 @@ import com.example.ui.theme.TypographyFoodii
 fun MealItemCard(
     meal: FoodiiMeal,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onRescheduleClick: (() -> Unit)? = null
 ) {
     val imageUrl = meal.image.toFullImageUrl()
     val context = LocalContext.current
@@ -42,9 +42,10 @@ fun MealItemCard(
             .padding(vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = surfaceVariantLight
+            // FONDO OSCURO PARA EL TEMA NEGRO
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -52,7 +53,7 @@ fun MealItemCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         color = primaryDark,
                         shape = RoundedCornerShape(12.dp),
@@ -84,23 +85,37 @@ fun MealItemCard(
                         Text(
                             text = meal.name,
                             style = TypographyFoodii.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = meal.mealTime.name.lowercase().replaceFirstChar { it.uppercase() },
                             style = TypographyFoodii.bodySmall,
-                            color = outlineDark
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-                
-                Text(
-                    text = "${meal.totalCalories.toInt()} kcal",
-                    style = TypographyFoodii.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = primaryLight,
-                    fontSize = 14.sp
-                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${meal.totalCalories.toInt()} kcal",
+                        style = TypographyFoodii.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 14.sp
+                    )
+                    
+                    if (onRescheduleClick != null) {
+                        IconButton(onClick = onRescheduleClick) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Reagendar",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             // Visualización de categorías
@@ -118,9 +133,9 @@ fun MealItemCard(
                             onClick = {},
                             label = { Text(label, fontSize = 10.sp) },
                             colors = AssistChipDefaults.assistChipColors(
-                                labelColor = primaryLight
+                                labelColor = MaterialTheme.colorScheme.primary
                             ),
-                            border = BorderStroke(1.dp, primaryLight.copy(alpha = 0.5f)),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                             shape = RoundedCornerShape(8.dp)
                         )
                     }
