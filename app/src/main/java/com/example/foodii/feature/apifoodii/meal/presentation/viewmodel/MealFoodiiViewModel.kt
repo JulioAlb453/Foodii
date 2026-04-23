@@ -248,7 +248,6 @@ class MealFoodiiViewModel(
             try {
                 var targetPlannedId = meal.plannedId
                 
-                // 1. INTENTO DE BORRADO LOCAL (Room)
                 if (targetPlannedId == null) {
                     Log.w("MealFoodiiViewModel", "deletePlannedMeal: plannedId nulo, buscando en Room...")
                     val localMeals = getPlannedMealsUseCase(meal.createdBy).first()
@@ -263,7 +262,6 @@ class MealFoodiiViewModel(
                     Log.d("MealFoodiiViewModel", "deletePlannedMeal: Borrando de Room (ID: $targetPlannedId)")
                     deletePlannedMealUseCase(targetPlannedId, meal.createdBy)
                 } else {
-                    // 2. INTENTO DE BORRADO EN SERVIDOR (API) si no estaba agendado localmente
                     Log.w("MealFoodiiViewModel", "deletePlannedMeal: No está en agenda local, intentando borrar platillo de la base de datos...")
                     deleteMealUseCase(meal.id, meal.createdBy)
                     Log.d("MealFoodiiViewModel", "deletePlannedMeal: Borrado exitoso en API")
@@ -354,7 +352,29 @@ class MealFoodiiViewModel(
         }
     }
 
+    fun loadRandomMeal(userId: String) {
+        _uiState.update { it.copy(isLoading = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val meals = if (_allMeals.value.isNotEmpty()) {
+                    _allMeals.value
+                } else {
+                    getMealsUseCase(userId).first()
+                }
+
+                if (meals.isNotEmpty()) {
+                    _allMeals.value = meals
+                    val randomMeal = meals.random()
+                    _uiState.update { it.copy(isLoading = false, randomMeal = randomMeal) }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, error = "No tienes comidas registradas para sugerir.") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.localizedMessage) }
+            }
+        }
+    }
+
     fun clearError() { _uiState.update { it.copy(error = null) } }
     fun clearSuccessData() { _uiState.update { it.copy(successData = null) } }
-    fun loadRandomMeal(userId: String) {}
 }

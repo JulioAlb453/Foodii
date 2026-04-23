@@ -26,6 +26,7 @@ import com.example.foodii.feature.apifoodii.meal.presentation.screen.AddMealScre
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealDetailScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsListScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.screen.MealsSummaryScreen
+import com.example.foodii.feature.apifoodii.meal.presentation.screen.RandomMealScreen
 import com.example.foodii.feature.apifoodii.meal.presentation.viewmodel.MealFoodiiViewModel
 import com.example.foodii.feature.auth.domain.usecase.LoginUseCase
 import com.example.foodii.feature.auth.domain.usecase.LogoutUseCase
@@ -73,7 +74,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            FoodiiTheme(dynamicColor = false) {
+            FoodiiTheme(dynamicColor = false, darkTheme = false) {
                 val navController = rememberNavController()
                 val scope = rememberCoroutineScope()
                 
@@ -179,6 +180,7 @@ class MainActivity : ComponentActivity() {
                                 userId = user.id,
                                 onViewSummaryClick = { navController.navigate("meals_summary") },
                                 onIngredientsClick = { navController.navigate("ingredients") },
+                                onRandomMealClick = { navController.navigate("random_meal") },
                                 onLogoutClick = {
                                     scope.launch {
                                         appContainer.authRepository.logout()
@@ -191,6 +193,20 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("meal_detail/$mealId")
                                 },
                                 onAddMealClick = { navController.navigate("add_meal") }
+                            )
+                        }
+                    }
+
+                    composable("random_meal") {
+                        val user = currentUser
+                        if (user != null) {
+                            val viewModel: MealFoodiiViewModel = viewModel(
+                                factory = appContainer.mealModule.provideMealViewModelFactory()
+                            )
+                            RandomMealScreen(
+                                viewModel = viewModel,
+                                userId = user.id,
+                                onBackPressed = { navController.popBackStack() }
                             )
                         }
                     }

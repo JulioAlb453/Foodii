@@ -3,10 +3,9 @@ package com.example.foodii.feature.apifoodii.meal.presentation.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,10 +23,11 @@ fun RandomMealScreen(
     userId: String,
     onBackPressed: () -> Unit
 ) {
-
     val allMeals by viewModel.allMeals.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
+    
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
 
     LaunchedEffect(Unit) {
         viewModel.loadAllMeals(userId)
@@ -36,6 +36,31 @@ fun RandomMealScreen(
     LaunchedEffect(allMeals) {
         if (allMeals.isNotEmpty()) {
             viewModel.loadRandomMeal(userId)
+        }
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        uiState.randomMeal?.let { meal ->
+                            viewModel.scheduleMealReminder(meal, millis)
+                        }
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 
@@ -74,11 +99,38 @@ fun RandomMealScreen(
                                 Text(meal.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text("${meal.totalCalories.toInt()} kcal", style = MaterialTheme.typography.bodyLarge)
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                Button(
+                                    onClick = { showDatePicker = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Icon(Icons.Default.CalendarMonth, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Agendar esta comida")
+                                }
+                                
+                                OutlinedButton(
+                                    onClick = { viewModel.loadRandomMeal(userId) },
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Text("Sugerir otra")
+                                }
                             }
                         }
                     }
                 }
-                else -> Text(uiState.error ?: "No tienes comidas registradas")
+                else -> {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(uiState.error ?: "No tienes comidas registradas")
+                        Button(onClick = onBackPressed, modifier = Modifier.padding(top = 16.dp)) {
+                            Text("Volver")
+                        }
+                    }
+                }
             }
         }
     }
